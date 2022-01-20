@@ -1,10 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.GameContent.UI;
+using Terraria.Graphics.Effects;
+using Terraria.Graphics.Shaders;
+using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Microsoft.Xna.Framework.Graphics;
+using Terraria.UI;
+using Terraria.Localization;
 
 namespace HairLoader
 {
@@ -20,16 +28,13 @@ namespace HairLoader
 		public static Dictionary<int, PlayerHair> HairStyles = new Dictionary<int, PlayerHair>();
 
 		// stores which mod added which texture
-		public static Dictionary<string, Dictionary<int, int>> HairTable = new Dictionary<string, Dictionary<int, int>>();
-		
-		// stores which hairStyle each player is wearing
-		public static int[] PlayerDisplayHairStyle = new int[128];
+		public static Dictionary<string, Dictionary<string, int>> HairTable = new Dictionary<string, Dictionary<string, int>>();
 
         public override void Load()
         {
 	    	if (!Main.dedServ)
         	{
-
+				RegisterHairTextures("HairLoader", "Example1", GetTexture("HairStyles/Example_1"), GetTexture("HairStyles/ExampleAlt_1"));
         	}
 		}
 
@@ -39,14 +44,37 @@ namespace HairLoader
         	{
 				HairStyles = null;
 				HairTable = null;
-				PlayerDisplayHairStyle = null;
         	}
+		}
+
+		public override void UpdateUI (GameTime gameTime)
+		{
+			if (Main.hairWindow && !Main.dedServ)
+			{
+				for (int i = 0; i < Main.maxHairTotal; i++)
+				{
+					if (HairStyles.ContainsKey(i))
+					{
+						Main.playerHairTexture[i] = HairLoader.HairStyles[i].Hair;
+			    		Main.playerHairAltTexture[i] = HairLoader.HairStyles[i].HairAlt;
+					}
+				}
+			}
 		}
 		
 //-----------------------------------------------------------------------------------------------------------------------------
-		public void RegisterCustomHair(string modName, Texture2D hair, Texture2D hairAlt)
+		public void RegisterHairTextures(string modName, string hairName, Texture2D hair, Texture2D hairAlt)
 		{
-			int index = HairStyles.Keys.Max() >= Main.maxHairTotal ? HairStyles.Keys.Max() + 1 : Main.maxHairTotal;
+			int index = 0;
+
+			if (HairStyles.Count > 0)
+			{
+				index = HairStyles.Keys.Max() >= Main.maxHairTotal ? HairStyles.Keys.Max() + 1 : Main.maxHairTotal;
+			}
+			else
+			{
+				index = Main.maxHairTotal;
+			}
 
 			HairLoader.HairStyles.Add
 			(
@@ -60,38 +88,33 @@ namespace HairLoader
 
 			if (!HairTable.ContainsKey(modName))
 			{
-				HairTable.Add(modName, new Dictionary<int, int>());
+				HairTable.Add(modName, new Dictionary<string, int>());
 			}
 
-			int subindex = 0;
-			if (HairTable[modName].Count != 0)
+			if (!HairTable[modName].ContainsKey(hairName))
 			{
-				subindex = HairTable[modName].Keys.Max() + 1;
+				HairTable[modName].Add(hairName, index);
 			}
-
-			HairTable[modName].Add(subindex, index);
 		}
 
-		public bool ChangePlayerHairStyle(string modName, int modHairID, int PlayerID)
+		public void ChangePlayerHairStyle(string modName, string hairName, int PlayerID)
 		{
 			if (!HairTable.ContainsKey(modName))
 			{
-				return false;
+				return;
 			}
 
-			if (!HairTable[modName].ContainsKey(modHairID))
+			if (!HairTable[modName].ContainsKey(hairName))
 			{
-				return false;
+				return;
 			}
 
-			PlayerDisplayHairStyle[PlayerID] = HairTable[modName][modHairID];
+			Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairTable[modName][hairName];
 
-			return true;
-		}
+			if (Main.netMode == NetmodeID.MultiplayerClient)
+			{
 
-		public void ClearPlayerDisplayHairStyle()
-		{
-			PlayerDisplayHairStyle = new int[128];
+			}
 		}
 	}
 }	
