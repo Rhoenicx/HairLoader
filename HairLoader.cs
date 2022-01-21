@@ -18,16 +18,16 @@ namespace HairLoader
 {
     public class PlayerHairTexture
     {
-        public Texture2D hair { get; set; }
-        public Texture2D hairAlt { get; set; }
+        public Texture2D hair { get; set; }		// Front hair texture file
+        public Texture2D hairAlt { get; set; }	// back hair texture file
     }
 	
 	public class PlayerHairEntry
 	{
-		public int index { get; set; }
-		public int currency { get; set; }
-		public int price { get; set; }
-		public bool visibility { get; set; }
+		public int index { get; set; }			// Index ID where to find this style in the HairStyles Dictionary
+		public int currency { get; set; }		// Determines the currency that will be used to buy this HairStyle, -1 = coins, >-1 = ItemID
+		public int price { get; set; }			// The price of this Hairstyle in the amount of currency above
+		public bool visibility { get; set; }	// If this hairstyle needs to be visible in the Hair Menu, Mods can change this using ChangePlayerHairEntryVisibility() mod call
 	}
     
     class HairLoader : Mod
@@ -120,10 +120,15 @@ namespace HairLoader
 					HairStyles.Add(_index, new PlayerHairTexture { hair = _hair, hairAlt = _hairAlt });
 				}
 			}
+			else
+			{
+				HairTable[_modName][_hairName] = new PlayerHairEntry { index = _index, currency = _currency, price = _price, visibility = _visibility };
+				HaiStyles[HairTable[_modName][_hairName].index] = new PlayerHairTexture { hair = _hair, hairAlt = _hairAlt };
+			}
 		}
 
 //-----------------------------------------------------------------------------------------------------------------------------
-		public void ModifyPlayerHairEntryVisibility (string _modName, string _hairName, bool _visibility)
+		public void ChangePlayerHairEntryVisibility (string _modName, string _hairName, bool _visibility)
 		{
 			if (!HairTable.ContainsKey(_modName))
 			{
