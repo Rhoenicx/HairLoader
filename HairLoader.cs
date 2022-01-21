@@ -36,7 +36,7 @@ namespace HairLoader
 		public static Dictionary<int, PlayerHairTexture> HairStyles = new Dictionary<int, PlayerHairTexture>();
 
 		// stores which mod added which texture
-		public static Dictionary<string, Dictionary<string, int>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+		public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
         public override void Load()
         {
