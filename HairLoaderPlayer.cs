@@ -49,7 +49,11 @@ namespace HairLoader
             // This code will make sure the player's hair is valid, if not it will reset the player's hairstyle and load possible missing textures
 			if (!HairLoader.HairStyles.ContainsKey(HairStyleID))
 			{
-				drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().HairStyleID = drawInfo.drawPlayer.hair;
+                if (!Main.gameMenu)
+                {
+                    drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().HairStyleID = drawInfo.drawPlayer.hair;
+                }
+
 				HairStyleID = drawInfo.drawPlayer.hair;
 			}
 

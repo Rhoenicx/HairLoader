@@ -47,6 +47,11 @@ namespace HairLoader
             {
                 HairStyles = new Dictionary<int, PlayerHairTexture>();
                 HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+
+                for (int i = 0; i < Main.maxHairTotal; i++)
+                {
+                    Main.hairLoaded[i] = false;
+                }
             }
         }
 
