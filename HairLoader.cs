@@ -77,7 +77,7 @@ namespace HairLoader
                 
                 if (!HairTable["Vanilla"].ContainsKey(i.ToString()))
                 {
-                    HairTable["Vanilla"].Add(i.ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true })
+                    HairTable["Vanilla"].Add(i.ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true });
                 }
 
                 if (!HairStyles.ContainsKey(i))
