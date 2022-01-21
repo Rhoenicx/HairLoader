@@ -1,18 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.GameContent.UI;
-using Terraria.Graphics.Effects;
-using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.ModLoader.IO;
-using Terraria.UI;
-using Terraria.Localization;
 
 namespace HairLoader
 {
@@ -38,12 +30,14 @@ namespace HairLoader
         // stores which mod added which texture
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
+        public static bool hairWindow;
+
         public override void Load()
         {
             if (!Main.dedServ)
             {
                 LoadVanillaHair();
-                RegisterCustomHair("HairLoader", "Example1", GetTexture("HairStyles/Example_1"), GetTexture("HairStyles/ExampleAlt_1"), -1, 10000, true);
+                RegisterCustomHair("HairLoader", "Example1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), -1, 10000, true);
             }
         }
 
@@ -51,96 +45,108 @@ namespace HairLoader
         {
             if (!Main.dedServ)
             {
-                HairStyles = null;
-                HairTable = null;
+                HairStyles = new Dictionary<int, PlayerHairTexture>();
+                HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
             }
         }
 
         public override void UpdateUI (GameTime gameTime)
         {
-            // Vanilla hair window may not be opened anymore
             if (Main.hairWindow)
             {
                 Main.hairWindow = !Main.hairWindow;
+
+                if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
+                {
+                    Main.player[Main.myPlayer].talkNPC = -1;
+                }
             }
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
         public void LoadVanillaHair()
         {
-            for (int i = 0, i < Main.maxHairTotal; i++)
+            for (int i = 0; i < Main.maxHairTotal; i++)
             {
                 if(!HairTable.ContainsKey("Vanilla"))
                 {
                     HairTable.Add("Vanilla", new Dictionary<string, PlayerHairEntry>());
                 }
-                
+
                 if (!HairTable["Vanilla"].ContainsKey(i.ToString()))
                 {
                     HairTable["Vanilla"].Add(i.ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true });
                 }
+                else
+                {
+                    HairTable["Vanilla"][i.ToString()] = new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true };
+                }
 
                 if (!HairStyles.ContainsKey(i))
                 {
-                    HairStyles.Add(i, new PlayerHairTexture { hair = GetTexture("HairStyles/Vanilla/player_hair_" + i.ToString()), hairAlt = GetTexture("HairStyles/Vanilla/player_hairAlt_" + i.ToString()});
+                    HairStyles.Add(i, new PlayerHairTexture { hair = GetTexture("HairStyles/Vanilla/Player_Hair_" + (i + 1).ToString()), hairAlt = GetTexture("HairStyles/Vanilla/Player_HairAlt_" + (i + 1).ToString()) });
+                }
+                else
+                {
+                    HairStyles[i] = new PlayerHairTexture { hair = GetTexture("HairStyles/Vanilla/Player_Hair_" + (i + 1).ToString()), hairAlt = GetTexture("HairStyles/Vanilla/Player_HairAlt_" + (i + 1).ToString()) };
                 }
             }
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-        public void RegisterCustomHair(string _modName, string _hairName, Texture2D _hair, Texture2D _hairAlt, int _currency, int _price, bool _visibility)
+        public void RegisterCustomHair(string modName, string hairName, Texture2D hair, Texture2D hairAlt, int currency, int price, bool visibility)
         {
-            int _index = 0;
+            int index = 0;
 
             if (HairStyles.Count > 0)
             {
-                _index = HairStyles.Keys.Max() >= Main.maxHairTotal ? HairStyles.Keys.Max() + 1 : Main.maxHairTotal;
+                index = HairStyles.Keys.Max() >= Main.maxHairTotal ? HairStyles.Keys.Max() + 1 : Main.maxHairTotal;
             }
             else
             {
-                _index = Main.maxHairTotal;
+                index = Main.maxHairTotal;
             }
 
-            if (_modName == "Vanilla")
+            if (modName == "Vanilla")
             {
                 return;
             }
             
-            if (!HairTable.ContainsKey(_modName))
+            if (!HairTable.ContainsKey(modName))
             {
-                HairTable.Add(_modName, new Dictionary<string, PlayerHairEntry>());
+                HairTable.Add(modName, new Dictionary<string, PlayerHairEntry>());
             }
 
-            if (!HairTable[_modName].ContainsKey(_hairName))
+            if (!HairTable[modName].ContainsKey(hairName))
             {
-                HairTable[_modName].Add(_hairName, new PlayerHairEntry { index = _index, currency = _currency, price = _price, visibility = _visibility });
+                HairTable[modName].Add(hairName, new PlayerHairEntry { index = index, currency = currency, price = price, visibility = visibility });
                 
-                if (!HairStyles.ContainsKey(_index))
+                if (!HairStyles.ContainsKey(index))
                 {
-                    HairStyles.Add(_index, new PlayerHairTexture { hair = _hair, hairAlt = _hairAlt });
+                    HairStyles.Add(index, new PlayerHairTexture { hair = hair, hairAlt = hairAlt });
                 }
             }
             else
             {
-                HairTable[_modName][_hairName] = new PlayerHairEntry { index = _index, currency = _currency, price = _price, visibility = _visibility };
-                HaiStyles[HairTable[_modName][_hairName].index] = new PlayerHairTexture { hair = _hair, hairAlt = _hairAlt };
+                HairTable[modName][hairName] = new PlayerHairEntry { index = index, currency = currency, price = price, visibility = visibility };
+                HairStyles[HairTable[modName][hairName].index] = new PlayerHairTexture { hair = hair, hairAlt = hairAlt };
             }
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-        public void ChangePlayerHairEntryVisibility (string _modName, string _hairName, bool _visibility)
+        public void ChangePlayerHairEntryVisibility (string modName, string hairName, bool visibility)
         {
-            if (!HairTable.ContainsKey(_modName))
+            if (!HairTable.ContainsKey(modName))
             {
                 return;
             }
             
-            if (!HairTable[_modName].ContainsKey(_hairName))
+            if (!HairTable[modName].ContainsKey(hairName))
             {
                 return;
             }
             
-            HairTable[_modName][_hairName].visibility = _visibility;
+            HairTable[modName][hairName].visibility = visibility;
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -158,7 +164,7 @@ namespace HairLoader
 
             Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairTable[modName][hairName].index;
 
-            if (Main.player[PlayerID] == Main.myPlayer)
+            if (Main.player[PlayerID].whoAmI == Main.myPlayer)
             {
                 if (!preview)
                 {
@@ -177,9 +183,9 @@ namespace HairLoader
                 return;
             }
             
-            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairTable[modName][hairName].index;
+            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairStyleID;
 
-            if (Main.player[PlayerID] == Main.myPlayer)
+            if (Main.player[PlayerID].whoAmI == Main.myPlayer)
             {
                 if (!preview)
                 {

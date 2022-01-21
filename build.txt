@@ -1,0 +1,7 @@
+author = Rhoenicx
+version = 0.0.0.1
+displayName = HairLoader
+hideCode = true
+hideResources = true
+homepage = None
+buildIgnore = obj/,bin/

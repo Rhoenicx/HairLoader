@@ -1,0 +1,17 @@
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\HairLoader.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\HairLoader.pdb
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\Microsoft.Xna.Framework.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\Microsoft.Xna.Framework.Game.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\Microsoft.Xna.Framework.Graphics.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\Microsoft.Xna.Framework.Xact.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\tModLoader.exe
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\tModLoader.pdb
+G:\Dropbox\personal\Terraria\Mods\HairLoader\bin\Debug\net45\tModLoader.xml
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.csproj.AssemblyReference.cache
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.GeneratedMSBuildEditorConfig.editorconfig
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.AssemblyInfoInputs.cache
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.AssemblyInfo.cs
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.csproj.CoreCompileInputs.cache
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.csproj.CopyComplete
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.dll
+G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net45\HairLoader.pdb
