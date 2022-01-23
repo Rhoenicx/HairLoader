@@ -34,9 +34,15 @@ namespace HairLoader
         // stores which mod added which texture
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable= new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
-        // UI elemtens
+        // UI elements
         public HairWindow HairWindow;
         public UserInterface HairWindowInterface;
+
+        // UI Textures
+        //public static Texture2D HueBarTex = GetTexture("UI/Textures/HueBar");
+        //public static Texture2D ColorBarTex = GetTexture("UI/Textures/ColorBar");
+        //public static Texture2D ColorBlipTex = GetTexture("UI/Textures/ColorBlip");
+        //public static Texture2D ColorSliderTex = GetTexture("UI/Textures/ColorSlider");
 
         public HairLoader()
         {
@@ -62,7 +68,7 @@ namespace HairLoader
                 }
 
                 LoadVanillaHair();
-                RegisterCustomHair("HairLoader", "Example1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), -1, 10000, true);
+                RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), -1, 10000, true);
             }
 
             base.Load();
