@@ -2,6 +2,7 @@
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
+using HairLoader.UI;
 
 namespace HairLoader
 {
@@ -13,6 +14,7 @@ namespace HairLoader
             {
                 if (!firstButton)
                 {
+                    HairLoader.Instance.HairWindow.OpenHairWindow();
                     return false;
                 }
             }

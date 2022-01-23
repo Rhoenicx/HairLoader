@@ -5,6 +5,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
+using HairLoader.UI;
+using Terraria.UI;
 
 namespace HairLoader
 {
@@ -21,38 +23,67 @@ namespace HairLoader
         public int price { get; set; }          // The price of this Hairstyle in the amount of currency above
         public bool visibility { get; set; }    // If this hairstyle needs to be visible in the Hair Menu, Mods can change this using ChangePlayerHairEntryVisibility() mod call
     }
-    
+
     class HairLoader : Mod
     {
+        internal static HairLoader Instance;
+
         // Stores all the hairstyles based on ID
         public static Dictionary<int, PlayerHairTexture> HairStyles = new Dictionary<int, PlayerHairTexture>();
 
         // stores which mod added which texture
-        public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+        public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable= new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
-        public static bool hairWindow;
+        // UI elemtens
+        public HairWindow HairWindow;
+        public UserInterface HairWindowInterface;
+
+        public HairLoader()
+        {
+            Instance = this;
+        }
 
         public override void Load()
         {
             if (!Main.dedServ)
             {
+
+                HairWindow = new HairWindow();
+                HairWindow.Activate();
+
+                HairWindowInterface = new UserInterface();
+                HairWindowInterface.SetState(HairWindow);
+
+
+                if (HairStyles == null || HairTable == null)
+                {
+                    HairStyles = new Dictionary<int, PlayerHairTexture>();
+                    HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+                }
+
                 LoadVanillaHair();
                 RegisterCustomHair("HairLoader", "Example1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), -1, 10000, true);
             }
+
+            base.Load();
         }
 
         public override void Unload()
         {
             if (!Main.dedServ)
             {
-                HairStyles = new Dictionary<int, PlayerHairTexture>();
-                HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+                HairStyles = null;
+                HairTable = null;
 
                 for (int i = 0; i < Main.maxHairTotal; i++)
                 {
                     Main.hairLoaded[i] = false;
                 }
             }
+
+            Instance = null;
+
+            base.Unload();
         }
 
         public override void UpdateUI (GameTime gameTime)
@@ -66,9 +97,37 @@ namespace HairLoader
                     Main.player[Main.myPlayer].talkNPC = -1;
                 }
             }
+
+            if (HairWindowInterface != null && HairWindow.Visible)
+            {
+                HairWindowInterface.Update(gameTime);
+            }
         }
 
-//-----------------------------------------------------------------------------------------------------------------------------
+        public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
+        {
+            int vanillaHairWindowIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Hair Window"));
+            if (vanillaHairWindowIndex != -1)
+            {
+                layers.Insert(vanillaHairWindowIndex, new LegacyGameInterfaceLayer(
+                    "HairLoader: Hair Window",
+                    delegate
+                    {
+                        if (HairWindow.Visible)
+                        {
+                            HairWindowInterface.Draw(Main.spriteBatch, new GameTime());
+                        }
+                        return true;
+                    },
+                    InterfaceScaleType.UI)
+                );
+            }
+
+
+            base.ModifyInterfaceLayers(layers);
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
         public void LoadVanillaHair()
         {
             for (int i = 0; i < Main.maxHairTotal; i++)
@@ -80,11 +139,11 @@ namespace HairLoader
 
                 if (!HairTable["Vanilla"].ContainsKey(i.ToString()))
                 {
-                    HairTable["Vanilla"].Add(i.ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true });
+                    HairTable["Vanilla"].Add("Vanilla " + (i + 1).ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true });
                 }
                 else
                 {
-                    HairTable["Vanilla"][i.ToString()] = new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true };
+                    HairTable["Vanilla"]["Vanilla " + (i + 1).ToString()] = new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true };
                 }
 
                 if (!HairStyles.ContainsKey(i))
@@ -112,9 +171,9 @@ namespace HairLoader
                 index = Main.maxHairTotal;
             }
 
-            if (modName == "Vanilla")
+            if (modName == "Vanilla" || modName == "All")
             {
-                return;
+                modName += "_";
             }
             
             if (!HairTable.ContainsKey(modName))
@@ -169,6 +228,11 @@ namespace HairLoader
 
             Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairTable[modName][hairName].index;
 
+            if (HairTable[modName][hairName].index < Main.maxHairTotal)
+            {
+                Main.player[PlayerID].hair = HairTable[modName][hairName].index;
+            }
+
             if (Main.player[PlayerID].whoAmI == Main.myPlayer)
             {
                 if (!preview)
@@ -189,6 +253,11 @@ namespace HairLoader
             }
             
             Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().HairStyleID = HairStyleID;
+
+            if (HairStyleID < Main.maxHairTotal)
+            {
+                Main.player[PlayerID].hair = HairStyleID;
+            }
 
             if (Main.player[PlayerID].whoAmI == Main.myPlayer)
             {

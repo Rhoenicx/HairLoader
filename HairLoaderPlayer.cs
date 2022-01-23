@@ -2,15 +2,13 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
+using HairLoader.UI;
 
 namespace HairLoader
 {
     public class HairLoaderPlayer : ModPlayer
     {
         public int HairStyleID = -1;
-        public int oldHairStyleID = -1;
-
-        public bool hairWindow = false;
 
         public override TagCompound Save()
         {
@@ -27,6 +25,8 @@ namespace HairLoader
 
         public override void OnEnterWorld(Player player)
         {
+            HairWindow.Visible = false;
+
             if (Main.netMode == NetmodeID.MultiplayerClient)
             {
                 
