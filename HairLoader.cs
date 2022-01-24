@@ -20,7 +20,8 @@ namespace HairLoader
     {
         public int index { get; set; }          // Index ID where to find this style in the HairStyles Dictionary
         public int currency { get; set; }       // Determines the currency that will be used to buy this HairStyle, -1 = coins, >-1 = ItemID
-        public int price { get; set; }          // The price of this Hairstyle in the amount of currency above
+        public int hairPrice { get; set; }      // The price of this Hairstyle in the amount of currency above
+        public int colorPrice { get; set; }     // The price to change the color of this Hairstyle in the amount of currency above
         public bool visibility { get; set; }    // If this hairstyle needs to be visible in the Hair Menu, Mods can change this using ChangePlayerHairEntryVisibility() mod call
     }
 
@@ -68,7 +69,7 @@ namespace HairLoader
                 }
 
                 LoadVanillaHair();
-                RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), -1, 10000, true);
+                RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), 2, 5, 1, true);
             }
 
             base.Load();
@@ -145,11 +146,11 @@ namespace HairLoader
 
                 if (!HairTable["Vanilla"].ContainsKey(i.ToString()))
                 {
-                    HairTable["Vanilla"].Add("Vanilla " + (i + 1).ToString(), new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true });
+                    HairTable["Vanilla"].Add("Vanilla " + (i + 1).ToString(), new PlayerHairEntry { index = i, currency = -1, hairPrice = i <= 51 ? 10000 : 50000, colorPrice = 10000, visibility = true });
                 }
                 else
                 {
-                    HairTable["Vanilla"]["Vanilla " + (i + 1).ToString()] = new PlayerHairEntry { index = i, currency = -1, price = i <= 51 ? 10000 : 50000, visibility = true };
+                    HairTable["Vanilla"]["Vanilla " + (i + 1).ToString()] = new PlayerHairEntry { index = i, currency = -1, hairPrice = i <= 51 ? 10000 : 50000, colorPrice = 10000, visibility = true };
                 }
 
                 if (!HairStyles.ContainsKey(i))
@@ -164,7 +165,7 @@ namespace HairLoader
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-        public void RegisterCustomHair(string modName, string hairName, Texture2D hair, Texture2D hairAlt, int currency, int price, bool visibility)
+        public void RegisterCustomHair(string modName, string hairName, Texture2D hair, Texture2D hairAlt, int currency, int hairPrice, int colorPrice, bool visibility)
         {
             int index = 0;
 
@@ -189,7 +190,7 @@ namespace HairLoader
 
             if (!HairTable[modName].ContainsKey(hairName))
             {
-                HairTable[modName].Add(hairName, new PlayerHairEntry { index = index, currency = currency, price = price, visibility = visibility });
+                HairTable[modName].Add(hairName, new PlayerHairEntry { index = index, currency = currency, hairPrice = hairPrice, colorPrice = colorPrice, visibility = visibility });
                 
                 if (!HairStyles.ContainsKey(index))
                 {
@@ -198,7 +199,7 @@ namespace HairLoader
             }
             else
             {
-                HairTable[modName][hairName] = new PlayerHairEntry { index = index, currency = currency, price = price, visibility = visibility };
+                HairTable[modName][hairName] = new PlayerHairEntry { index = index, currency = currency, hairPrice = hairPrice, colorPrice = colorPrice, visibility = visibility };
                 HairStyles[HairTable[modName][hairName].index] = new PlayerHairTexture { hair = hair, hairAlt = hairAlt };
             }
         }
