@@ -8,53 +8,58 @@ namespace HairLoader
 {
     public class HairLoaderPlayer : ModPlayer
     {
-        public int HairStyleID = -1;
+        public string Hair_modName = "";
+        public string Hair_hairName = "";
 
         public override TagCompound Save()
         {
             return new TagCompound
             {
-                { "HairStyleID", HairStyleID }
+                { "modName", Hair_modName },
+                { "hairName", Hair_hairName }
             };
         }
 
         public override void Load(TagCompound tag)
         {
-            HairStyleID = tag.GetInt("HairStyleID");
+            Hair_modName = tag.GetString("modName");
+            Hair_hairName = tag.GetString("hairName");
         }
 
         public override void OnEnterWorld(Player player)
         {
             HairWindow.Visible = false;
 
-            if (Main.netMode == NetmodeID.MultiplayerClient)
+            if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer)
             {
-                
+                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairName, player.whoAmI);
             }
         }
 
         public override void PlayerConnect(Player player)
         {
-            //Send the hairstyleID of this player to other players
-            if (Main.netMode == NetmodeID.MultiplayerClient)
+            if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer)
             {
-                
+                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairName, player.whoAmI);
             }
         }
 
         public override void ModifyDrawInfo(ref PlayerDrawInfo drawInfo)
 		{
-			int HairStyleID = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().HairStyleID;
+			string modName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName;
+            string hairName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName;
 
-            // This code will make sure the player's hair is valid, if not it will reset the player's hairstyle and load possible missing textures
-			if (!HairLoader.HairStyles.ContainsKey(HairStyleID))
-			{
-                if (!Main.gameMenu)
+            // This code will make sure the player's hair is valid, if not it will reset the player's hairstyle
+            if (!HairLoader.HairTable.ContainsKey(modName))
+            {
+                if (HairLoader.Instance.getModAndHairNames(ref modName, ref hairName, drawInfo.drawPlayer.hair))
                 {
-                    drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().HairStyleID = drawInfo.drawPlayer.hair;
+                    if (!Main.gameMenu)
+                    {
+                        drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
+                        drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
+                    }
                 }
-
-				HairStyleID = drawInfo.drawPlayer.hair;
 			}
 
             if (Main.hairWindow)
@@ -67,8 +72,8 @@ namespace HairLoader
                 }
             }
 
-            Main.playerHairTexture[drawInfo.drawPlayer.hair] = HairLoader.HairStyles[HairStyleID].hair;
-			Main.playerHairAltTexture[drawInfo.drawPlayer.hair] = HairLoader.HairStyles[HairStyleID].hairAlt;
+            Main.playerHairTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hair;
+			Main.playerHairAltTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hairAlt;
 		}
     }
 }
