@@ -25,13 +25,14 @@ namespace HairLoader
     {
         internal static HairLoader Instance;
 
-        // stores which mod added which texture
+        // Dictionary that stores all the PlayerHairEntries
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
         // UI elements
         public HairWindow HairWindow;
         public UserInterface HairWindowInterface;
 
+        // Point to this Mod object Instance.
         public HairLoader()
         {
             Instance = this;
@@ -39,22 +40,26 @@ namespace HairLoader
 
         public override void Load()
         {
+            // Code not ran on server
             if (!Main.dedServ)
             {
-
+                // Activate the new HairWindow UI element
                 HairWindow = new HairWindow();
                 HairWindow.Activate();
 
                 HairWindowInterface = new UserInterface();
                 HairWindowInterface.SetState(HairWindow);
 
-
+                // Detect if the HairTable has been cleared by an Unload => create a new empty HairTable.
                 if (HairTable == null)
                 {
                     HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
                 }
 
+                // Load all the Vanilla HairStyles into the HairTable
                 LoadVanillaHair();
+                
+                // Register 1 example HairStyle
                 RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), 2, 5, 1, true);
             }
 
@@ -63,16 +68,22 @@ namespace HairLoader
 
         public override void Unload()
         {
+            // Code not ran on server
             if (!Main.dedServ)
             {
+                // Clear the HairTable
                 HairTable = null;
 
+                // Tell Terraria that all Hair Textures are 'not loaded anymore' to load the vanilla ones.
+                // HairLoader's textures will get overwritten by the vanilla ones, to prevent lingering
+                // HairLoader textures in playerhairtexture and playerhairalttexture array.
                 for (int i = 0; i < Main.maxHairTotal; i++)
                 {
                     Main.hairLoaded[i] = false;
                 }
             }
-
+               
+            // Clear our mod instance
             Instance = null;
 
             base.Unload();
@@ -320,4 +331,4 @@ namespace HairLoader
     {
         HairUpdate
     }
-}    
+}
