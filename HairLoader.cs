@@ -64,9 +64,6 @@ namespace HairLoader
                 // Register 1 example HairStyle
                 RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), 2, 5, 1, true);
                 
-                // Gensokyo test
-                RegisterCustomHair("Gensokyo", "Toyosatomimi no Miko Hairstyle", GetTexture("HairStyles/Gensokyo/ToyosatomimiNoMiko_Hair"), GetTexture("HairStyles/Gensokyo/ToyosatomimiNoMiko_HairAlt"), -1, 50000, 10000, true);
-                RegisterCustomHair("Gensokyo", "Rinnousuke Hairstyle", GetTexture("HairStyles/Gensokyo/Rinnousuke_Hair"), GetTexture("HairStyles/Gensokyo/Rinnousuke_HairAlt"), -1, 50000, 10000, true);
             }
 
             base.Load();
