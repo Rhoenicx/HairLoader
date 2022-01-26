@@ -597,7 +597,7 @@ namespace HairLoader.UI
         {
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
-            if ((HairWindow.selectMod == HairWindow.OldModName || HairWindow.selectHair == HairWindow.OldHairName) && Main.player[Main.myPlayer].hairColor == HairWindow.OldHairColor)
+            if ((HairWindow.selectMod == HairWindow.OldModName && HairWindow.selectHair == HairWindow.OldHairName) && Main.player[Main.myPlayer].hairColor == HairWindow.OldHairColor)
             {
                 return;
             }

@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
@@ -61,6 +63,10 @@ namespace HairLoader
                 
                 // Register 1 example HairStyle
                 RegisterCustomHair("HairLoader", "Example_1", GetTexture("HairStyles/HairLoader/Example_1"), GetTexture("HairStyles/HairLoader/ExampleAlt_1"), 2, 5, 1, true);
+                
+                // Gensokyo test
+                RegisterCustomHair("Gensokyo", "Toyosatomimi no Miko Hairstyle", GetTexture("HairStyles/Gensokyo/ToyosatomimiNoMiko_Hair"), GetTexture("HairStyles/Gensokyo/ToyosatomimiNoMiko_HairAlt"), -1, 50000, 10000, true);
+                RegisterCustomHair("Gensokyo", "Rinnousuke Hairstyle", GetTexture("HairStyles/Gensokyo/Rinnousuke_Hair"), GetTexture("HairStyles/Gensokyo/Rinnousuke_HairAlt"), -1, 50000, 10000, true);
             }
 
             base.Load();
@@ -128,6 +134,62 @@ namespace HairLoader
 
 
             base.ModifyInterfaceLayers(layers);
+        }
+
+        public override object Call(params object[] args)
+        {
+            int argsLength = args.Length;
+            Array.Resize(ref args, 15);
+
+            try {
+                string messageType = args[0] as string;
+
+                if (messageType == "RegisterHairStyle")
+                {
+                    RegisterCustomHair(
+                        args[1] as string, //modName
+                        args[2] as string, //hairName
+                        args[3] as Texture2D, //hair Texture
+                        args[4] as Texture2D, //hairAlt texture
+                        Convert.ToInt32(args[5]), // currency
+                        Convert.ToInt32(args[6]), // hair price
+                        Convert.ToInt32(args[7]), // color price
+                        args[8] as bool? // visibility
+                    );
+                    
+
+                    return "Success";
+                }
+                else if (messageType == "ChangeHairStyleVisibilityInUI")
+                {
+                    ChangePlayerHairEntryVisibility(
+                        args[1] as string, //modName
+                        args[2] as string, //hairName
+                        args[3] as bool? //visibility
+                    );
+                    return "Success";
+                }
+
+                else if (messageType == "ChangePlayerHairStyle")
+                {
+                    ChangePlayerHairStyle(
+                        args[1] as string, //modName
+                        args[2] as string, //hairName
+                        Convert.ToInt32(args[3]) //playerID
+                    );
+
+                    return "Success";
+                }
+                else
+                {
+                    Logger.Error("HairLoader: Unknown Message: {message}");
+                }
+            }
+            catch (Exception e) {
+				Logger.Error($"HairLoader: Call error {e.StackTrace} {e.Message}");
+			}
+
+			return "Failure";
         }
 
         public override void HandlePacket(BinaryReader reader, int whoAmI)
@@ -221,7 +283,7 @@ namespace HairLoader
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-        public void RegisterCustomHair(string modName, string hairName, Texture2D hair, Texture2D hairAlt, int currency, int hairPrice, int colorPrice, bool visibility)
+        public void RegisterCustomHair(string modName, string hairName, Texture2D hair, Texture2D hairAlt, int currency, int hairPrice, int colorPrice, bool? visibility)
         {
             if (modName == "Vanilla" || modName == "All")
             {
@@ -242,7 +304,7 @@ namespace HairLoader
                     currency = currency, 
                     hairPrice = hairPrice, 
                     colorPrice = colorPrice, 
-                    visibility = visibility 
+                    visibility = visibility.HasValue ? visibility.Value : false 
                 });
             }
             else
@@ -254,13 +316,13 @@ namespace HairLoader
                     currency = currency, 
                     hairPrice = hairPrice, 
                     colorPrice = colorPrice, 
-                    visibility = visibility 
+                    visibility = visibility.HasValue ? visibility.Value : false 
                 };
             }
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------
-        public void ChangePlayerHairEntryVisibility (string modName, string hairName, bool visibility)
+        public void ChangePlayerHairEntryVisibility (string modName, string hairName, bool? visibility)
         {
             if (!HairTable.ContainsKey(modName))
             {
@@ -272,7 +334,7 @@ namespace HairLoader
                 return;
             }
 
-            HairTable[modName][hairName].visibility = visibility;
+            HairTable[modName][hairName].visibility = visibility.HasValue ? visibility.Value : false ;
         }
 
 //-----------------------------------------------------------------------------------------------------------------------------

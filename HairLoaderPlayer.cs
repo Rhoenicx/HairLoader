@@ -1,7 +1,10 @@
+using System.Collections.Generic;
+using System.IO;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
+using Terraria.UI;
 using HairLoader.UI;
 
 namespace HairLoader
@@ -85,7 +88,7 @@ namespace HairLoader
                 else
                 {
                     // If the code ends up here something messed up badly, somehow the vanilla hairstyle is not present in the HairTable...
-                    Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modName + " - " + hairName + " ! Report this to the developer!");
+                    // Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modName + " - " + hairName + " ! Report this to the developer!");
                     return;
                 }
             }
