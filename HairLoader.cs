@@ -23,12 +23,21 @@ namespace HairLoader
         public bool visibility { get; set; }    // If this hairstyle needs to be visible in the Hair Menu, Mods can change this using ChangePlayerHairEntryVisibility() mod call
     }
 
+    public class VanillaTextureSlots
+    { 
+        public string modName { get; set; }
+        public string hairName { get; set; }
+    }
+
     class HairLoader : Mod
     {
         internal static HairLoader Instance;
 
         // Dictionary that stores all the PlayerHairEntries
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+
+        // Array to keep track if custom textures are loaded
+        public static VanillaTextureSlots[] VanillaTextureSlot = new VanillaTextureSlots[Main.maxHairTotal];
 
         // UI elements
         public HairWindow HairWindow;
@@ -276,6 +285,8 @@ namespace HairLoader
                         visibility = true 
                     };
                 }
+
+                VanillaTextureSlot[i] = new VanillaTextureSlots { modName = "Vanilla", hairName = "Vanilla " + (i + 1).ToString() };
             }
         }
 

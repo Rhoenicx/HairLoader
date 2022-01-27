@@ -52,46 +52,58 @@ namespace HairLoader
             // Get the modName and hairName of our current drawPlayer.
             string modName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName;
             string hairName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName;
-            
+
             // Boolean that is used to check if the hair is valid and/or found in out HairTable Dictionary
-            bool valid = true;
+            if (HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].modName != modName || HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].hairName != hairName)
+            {
+                bool valid = true;
 
-            // Check if the player's saved hairstyle is present in the HairTable Dictionary
-            if (!HairLoader.HairTable.ContainsKey(modName))
-            {
-                // The modName of the hairstyle stored in the player could not be found
-                valid = false;
-            }
-            else if (!HairLoader.HairTable[modName].ContainsKey(hairName))
-            {
-                // The hairName of the hairstyle stored in the player could not be found
-                valid = false;
-            }
-
-            // If the modName OR hairName does not exist in the HairTable:
-            if (!valid)
-            {
-                // Search for the vanilla hairstyle, use the player's vanilla hair ID to find the modName and hairName
-                // since this method uses 'ref' keyword the vanilla mod&hair names gets assigned to these variables automatically.
-                if (HairLoader.Instance.getModAndHairNames(ref modName, ref hairName, drawInfo.drawPlayer.hair))
+                // Check if the player's saved hairstyle is present in the HairTable Dictionary
+                if (!HairLoader.HairTable.ContainsKey(modName))
                 {
-                    // If the player is in the main menu we don't want to run this code, this will prevent the
-                    // player from changing their hair in the character creator window.
-                    
-                    // TODO: This might be optimized a little better... perhaps?
-                    if (!Main.gameMenu) // (Main.PendingPlayer != (Player) null) Main.menuMode ?
+                    // The modName of the hairstyle stored in the player could not be found
+                    valid = false;
+                }
+                else if (!HairLoader.HairTable[modName].ContainsKey(hairName))
+                {
+                    // The hairName of the hairstyle stored in the player could not be found
+                    valid = false;
+                }
+
+                // If the modName OR hairName does not exist in the HairTable:
+                if (!valid)
+                {
+                    // Search for the vanilla hairstyle, use the player's vanilla hair ID to find the modName and hairName
+                    // since this method uses 'ref' keyword the vanilla mod&hair names gets assigned to these variables automatically.
+                    if (HairLoader.Instance.getModAndHairNames(ref modName, ref hairName, drawInfo.drawPlayer.hair))
                     {
-                        drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
-                        drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
+                        // If the player is in the main menu we don't want to run this code, this will prevent the
+                        // player from changing their hair in the character creator window.
+
+                        if (!Main.gameMenu)
+                        {
+                            // Assign the valid vanilla hairstyle to this player
+                            drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
+                            drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
+                        }
+                    }
+                    else
+                    {
+                        // If the code ends up here something messed up badly, somehow the vanilla hairstyle is not present in the HairTable...
+                        HairLoader.Instance.Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modName + " - " + hairName + " ! Report this to the developer!");
+                        return;
                     }
                 }
-                else
-                {
-                    // If the code ends up here something messed up badly, somehow the vanilla hairstyle is not present in the HairTable...
-                    // Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modName + " - " + hairName + " ! Report this to the developer!");
-                    return;
-                }
+
+                // Replace the texture file in the texture slot of the player's vanilla hairstyle with our textures.
+                Main.playerHairTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hair;
+                Main.playerHairAltTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hairAlt;
+
+                // Update Internal vanilla texture array
+                HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].modName = modName;
+                HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].hairName = hairName;
             }
+
 
             // Close the vanilla Hair Window UI if active, this one is a little broken due to swapping textures in the Main hair texture array anyway.
             if (Main.hairWindow)
@@ -103,10 +115,6 @@ namespace HairLoader
                     Main.player[Main.myPlayer].talkNPC = -1;
                 }
             }
-
-            // Replace the texture file in the texture slot of the player's vanilla hairstyle with our textures.
-            Main.playerHairTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hair;
-            Main.playerHairAltTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hairAlt;
         }
     }
 }

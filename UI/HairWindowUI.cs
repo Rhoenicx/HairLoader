@@ -154,8 +154,20 @@ namespace HairLoader.UI
             BuyText = new UIText("Buy", 1.25f, false);
             BuyText.Top.Set(250f, 0f);
             BuyText.Left.Set(630f, 0f);
-            BuyText.OnMouseOver += (a, b) => { if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor) BuyText.TextColor = new Color(255, 199, 0); };
-            BuyText.OnMouseOut += (a, b) => { BuyText.TextColor = new Color(235, 235, 235); };
+            BuyText.OnMouseOver += (a, b) => 
+            {
+                if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor)
+                {
+                    BuyText.TextColor = new Color(255, 199, 0);
+                    BuyText.SetText("Buy", 1.5f, false);
+                    Main.PlaySound(SoundID.MenuTick);
+                }
+            };
+            BuyText.OnMouseOut += (a, b) => 
+            { 
+                BuyText.TextColor = new Color(235, 235, 235);
+                BuyText.SetText("Buy", 1.25f, false);
+            };
             BuyText.OnClick += (a, b) => { if (CanBuyHair()) BuyHairWindow(); };
             HairWindowPanel.Append(BuyText);
 
@@ -163,8 +175,17 @@ namespace HairLoader.UI
             CancelText = new UIText("Cancel", 1.25f, false);
             CancelText.Top.Set(250f, 0f);
             CancelText.Left.Set(750f, 0f);
-            CancelText.OnMouseOver += (a, b) => { CancelText.TextColor = new Color(255, 199, 0); };
-            CancelText.OnMouseOut += (a, b) => { CancelText.TextColor = new Color(235, 235, 235); };
+            CancelText.OnMouseOver += (a, b) => 
+            { 
+                CancelText.TextColor = new Color(255, 199, 0);
+                CancelText.SetText("Cancel", 1.5f, false);
+                Main.PlaySound(SoundID.MenuTick);
+            };
+            CancelText.OnMouseOut += (a, b) => 
+            { 
+                CancelText.TextColor = new Color(235, 235, 235);
+                CancelText.SetText("Cancel", 1.25f, false);
+            };
             CancelText.OnClick += (a, b) => { CloseHairWindow(); };
             HairWindowPanel.Append(CancelText);
 
@@ -478,6 +499,11 @@ namespace HairLoader.UI
             spriteBatch.Draw(Main.playerTextures[0, 1], dimensions.Center(), new Rectangle?(new Rectangle(0, 0, Main.playerTextures[0, 1].Width, 54)), new Color(255, 255, 255, 255), 0.0f, new Vector2(Main.playerTextures[0, 1].Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(Main.playerTextures[0, 2], dimensions.Center(), new Rectangle?(new Rectangle(0, 0, Main.playerTextures[0, 2].Width, 54)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(Main.playerTextures[0, 2].Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width, 54)), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+
+            if (IsMouseHovering)
+            {
+                Main.hoverItemName = hairName;
+            }
         }
     }
 
