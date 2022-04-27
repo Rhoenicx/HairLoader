@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "LSXpzt2lSGKgM2bXv5HeKnuH7rdxp9Vtcx5N9N/cExXJ3RmzLIxvMKhsPSZr8l2MqCUj9eaPcyxZCLKlv647GQ==",
+  "dgSpecHash": "r7r/9M7srUgAmC6VQaT35OUheG3f726Hhbtoc4pqy+lh2WEewtWoOTOer7Dl+IRhhqQ3koObqbSz1Aqe3df5IA==",
   "success": true,
   "projectFilePath": "G:\\Dropbox\\personal\\Terraria\\Mods\\HairLoader\\HairLoader.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\chris\\.nuget\\packages\\tmodloader.codeassist\\0.1.3\\tmodloader.codeassist.0.1.3.nupkg.sha512"
+    "C:\\Users\\chris\\.nuget\\packages\\tmodloader.codeassist\\0.1.5\\tmodloader.codeassist.0.1.5.nupkg.sha512"
   ],
   "logs": []
 }

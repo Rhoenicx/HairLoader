@@ -1,11 +1,10 @@
-using System.Collections.Generic;
-using System.IO;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Terraria.UI;
+using Terraria.GameContent;
 using HairLoader.UI;
+using Terraria.DataStructures;
 
 namespace HairLoader
 {
@@ -14,16 +13,13 @@ namespace HairLoader
         public string Hair_modName = "";
         public string Hair_hairName = "";
 
-        public override TagCompound Save()
+        public override void SaveData(TagCompound tag)
         {
-            return new TagCompound
-            {
-                { "modName", Hair_modName },
-                { "hairName", Hair_hairName }
-            };
+            tag.Add("modName", Hair_modName);
+            tag.Add("hairName", Hair_hairName);
         }
 
-        public override void Load(TagCompound tag)
+        public override void LoadData(TagCompound tag)
         {
             Hair_modName = tag.GetString("modName");
             Hair_hairName = tag.GetString("hairName");
@@ -47,7 +43,7 @@ namespace HairLoader
             }
         }
 
-        public override void ModifyDrawInfo(ref PlayerDrawInfo drawInfo)
+        public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
         {
             // Get the modName and hairName of our current drawPlayer.
             string modName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName;
@@ -75,7 +71,7 @@ namespace HairLoader
                 {
                     // Search for the vanilla hairstyle, use the player's vanilla hair ID to find the modName and hairName
                     // since this method uses 'ref' keyword the vanilla mod&hair names gets assigned to these variables automatically.
-                    if (HairLoader.Instance.getModAndHairNames(ref modName, ref hairName, drawInfo.drawPlayer.hair))
+                    if (HairLoader.getModAndHairNames(ref modName, ref hairName, drawInfo.drawPlayer.hair))
                     {
                         // If the player is in the main menu we don't want to run this code, this will prevent the
                         // player from changing their hair in the character creator window.
@@ -96,14 +92,16 @@ namespace HairLoader
                 }
 
                 // Replace the texture file in the texture slot of the player's vanilla hairstyle with our textures.
-                Main.playerHairTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hair;
-                Main.playerHairAltTexture[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hairAlt;
+                TextureAssets.PlayerHair[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hair;
+                TextureAssets.PlayerHairAlt[drawInfo.drawPlayer.hair] = HairLoader.HairTable[modName][hairName].hairAlt;               
 
                 // Update Internal vanilla texture array
                 HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].modName = modName;
                 HairLoader.VanillaTextureSlot[drawInfo.drawPlayer.hair].hairName = hairName;
             }
-
+                
+            // Apply the drawOffset for this hairstyle
+            drawInfo.hairOffset.X = HairLoader.HairTable[modName][hairName].hairOffset;
 
             // Close the vanilla Hair Window UI if active, this one is a little broken due to swapping textures in the Main hair texture array anyway.
             if (Main.hairWindow)
@@ -112,7 +110,7 @@ namespace HairLoader
 
                 if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
                 {
-                    Main.player[Main.myPlayer].talkNPC = -1;
+                    Main.player[Main.myPlayer].SetTalkNPC(-1);
                 }
             }
         }

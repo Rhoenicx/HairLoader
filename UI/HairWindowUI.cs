@@ -4,12 +4,14 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.UI;
 using Terraria.ID;
+using Terraria.Audio;
+using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using static Terraria.ModLoader.ModContent;
 
 namespace HairLoader.UI
 {
-    internal class HairWindow : UIState
+    public class HairWindow : UIState
     {
         // Visibility of panel
         public static bool Visible;
@@ -160,7 +162,7 @@ namespace HairLoader.UI
                 {
                     BuyText.TextColor = new Color(255, 199, 0);
                     BuyText.SetText("Buy", 1.5f, false);
-                    Main.PlaySound(SoundID.MenuTick);
+                    SoundEngine.PlaySound(SoundID.MenuTick);
                 }
             };
             BuyText.OnMouseOut += (a, b) => 
@@ -179,7 +181,7 @@ namespace HairLoader.UI
             { 
                 CancelText.TextColor = new Color(255, 199, 0);
                 CancelText.SetText("Cancel", 1.5f, false);
-                Main.PlaySound(SoundID.MenuTick);
+                SoundEngine.PlaySound(SoundID.MenuTick);
             };
             CancelText.OnMouseOut += (a, b) => 
             { 
@@ -237,12 +239,13 @@ namespace HairLoader.UI
             Main.playerInventory = false;
             Main.npcChatText = "";
 
+            UpdateUnlocks();
             UpdateModList();
             UpdateHairGrid(highlightMod);
 
             Visible = true;
 
-            Main.PlaySound(SoundID.MenuOpen);
+            SoundEngine.PlaySound(SoundID.MenuOpen);
         }
 
         internal void CloseHairWindow()
@@ -260,10 +263,10 @@ namespace HairLoader.UI
 
             if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
             {
-                Main.player[Main.myPlayer].talkNPC = -1;
+                Main.player[Main.myPlayer].SetTalkNPC(-1);
             }
 
-            Main.PlaySound(SoundID.MenuClose);
+            SoundEngine.PlaySound(SoundID.MenuClose);
         }
 
         internal void BuyHairWindow()
@@ -278,10 +281,10 @@ namespace HairLoader.UI
 
             if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
             {
-                Main.player[Main.myPlayer].talkNPC = -1;
+                Main.player[Main.myPlayer].SetTalkNPC(-1);
             }
 
-            Main.PlaySound(SoundID.Coins);
+            SoundEngine.PlaySound(SoundID.Coins);
         }
 
         internal bool CanBuyHair()
@@ -370,7 +373,7 @@ namespace HairLoader.UI
             {
                 highlightMod = "All";
                 UpdateHairGrid(highlightMod);
-                Main.PlaySound(SoundID.MenuTick);
+                SoundEngine.PlaySound(SoundID.MenuTick);
             };
             ModList.Add(modListEntryAll);
 
@@ -395,12 +398,19 @@ namespace HairLoader.UI
                     {
                         highlightMod = _modName.Key;
                         UpdateHairGrid(_modName.Key);
-                        Main.PlaySound(SoundID.MenuTick);
+                        SoundEngine.PlaySound(SoundID.MenuTick);
                     };
 
                     ModList.Add(modListEntry);
                 }
             }
+        }
+
+        private void UpdateUnlocks()
+        {
+            Main.hairWindow = true;
+            Main.Hairstyles.UpdateUnlocks();
+            Main.hairWindow = false;
         }
 
         internal void UpdateHairGrid(string modName)
@@ -415,9 +425,11 @@ namespace HairLoader.UI
                     {
                         if (modName == "All" || _modName.Key == modName)
                         {
-                            if (_hairName.Value.index < Main.maxHairTotal)
+                            if (_modName.Key == "Vanilla")
                             {
-                                if (_hairName.Value.index > Main.UnlockedMaxHair())
+                                UpdateUnlocks();
+
+                                if (HairLoader.HairTable[_modName.Key][_hairName.Key].index >= Main.Hairstyles.AvailableHairstyles.Count)
                                 {
                                     continue;
                                 }
@@ -431,7 +443,7 @@ namespace HairLoader.UI
                                 Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName = _hairName.Key;
                                 selectMod = _modName.Key;
                                 selectHair = _hairName.Key;
-                                Main.PlaySound(SoundID.MenuTick);
+                                SoundEngine.PlaySound(SoundID.MenuTick);
                             };
 
                             HairGrid._items.Add(slot);
@@ -478,8 +490,8 @@ namespace HairLoader.UI
         private string modName;
         private string hairName;
 
-        public static Texture2D backgroundTexture = Main.inventoryBack8Texture;
-        public static Texture2D myBackgroundTexture = Main.inventoryBack14Texture;
+        public static Texture2D backgroundTexture = TextureAssets.InventoryBack8.Value;
+        public static Texture2D myBackgroundTexture = TextureAssets.InventoryBack14.Value;
 
         public HairSlot(string _modName, string _hairName)
         {
@@ -494,11 +506,13 @@ namespace HairLoader.UI
             CalculatedStyle dimensions = base.GetInnerDimensions();
             Texture2D texture = (Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName == modName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName == hairName) ? myBackgroundTexture : backgroundTexture;
 
+            const int offsetX = 38;
+
             spriteBatch.Draw(texture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-            spriteBatch.Draw(Main.playerTextures[0, 0], dimensions.Center(), new Rectangle?(new Rectangle(0, 0, Main.playerTextures[0, 0].Width, 54)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(Main.playerTextures[0, 0].Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(Main.playerTextures[0, 1], dimensions.Center(), new Rectangle?(new Rectangle(0, 0, Main.playerTextures[0, 1].Width, 54)), new Color(255, 255, 255, 255), 0.0f, new Vector2(Main.playerTextures[0, 1].Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(Main.playerTextures[0, 2], dimensions.Center(), new Rectangle?(new Rectangle(0, 0, Main.playerTextures[0, 2].Width, 54)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(Main.playerTextures[0, 2].Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width, 54)), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair.Value, dimensions.Center() + new Vector2(HairLoader.HairTable[modName][hairName].hairOffset, 0f), new Rectangle?(new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width(), 56)), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width(), dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
 
             if (IsMouseHovering)
             {
@@ -510,11 +524,11 @@ namespace HairLoader.UI
     internal class UIColorBar : UIElement
     {
         Rectangle rect = new Rectangle(0, 0, 178, 16);
-        Texture2D HueBarTex = GetTexture("Terraria/Hue");
-        Texture2D ColorBarTex = GetTexture("Terraria/ColorBar");
-        Texture2D SliderHighlightTex = GetTexture("Terraria/UI/Slider_Highlight");
-        Texture2D ColorBlipTex = GetTexture("Terraria/ColorBlip");
-        Texture2D ColorSliderTex = GetTexture("Terraria/ColorSlider");
+        Texture2D HueBarTex = TextureAssets.Hue.Value;
+        Texture2D ColorBarTex = TextureAssets.ColorBar.Value;
+        Texture2D SliderHighlightTex = TextureAssets.ColorHighlight.Value;
+        Texture2D ColorBlipTex = TextureAssets.ColorBlip.Value;
+        Texture2D ColorSliderTex = TextureAssets.ColorSlider.Value;
 
         public bool dragging;
         public int type;
@@ -666,19 +680,19 @@ namespace HairLoader.UI
 
                 copper = price;
 
-                spriteBatch.Draw(Main.itemTexture[ItemID.PlatinumCoin], dimensions.Position() + new Vector2(80f - 60f, 0f), Main.itemTexture[ItemID.PlatinumCoin].Bounds, Color.White, 0f, Main.itemTexture[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(Main.itemTexture[ItemID.GoldCoin], dimensions.Position() + new Vector2(80f - 20f, 0f), Main.itemTexture[ItemID.GoldCoin].Bounds, Color.White, 0f, Main.itemTexture[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(Main.itemTexture[ItemID.SilverCoin], dimensions.Position() + new Vector2(80f + 20f, 2f), Main.itemTexture[ItemID.SilverCoin].Bounds, Color.White, 0f, Main.itemTexture[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(Main.itemTexture[ItemID.CopperCoin], dimensions.Position() + new Vector2(80f + 60f, 4f), Main.itemTexture[ItemID.CopperCoin].Bounds, Color.White, 0f, Main.itemTexture[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(TextureAssets.Item[ItemID.PlatinumCoin].Value, dimensions.Position() + new Vector2(80f - 60f, 0f), TextureAssets.Item[ItemID.PlatinumCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(TextureAssets.Item[ItemID.GoldCoin].Value, dimensions.Position() + new Vector2(80f - 20f, 0f), TextureAssets.Item[ItemID.GoldCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(TextureAssets.Item[ItemID.SilverCoin].Value, dimensions.Position() + new Vector2(80f + 20f, 2f), TextureAssets.Item[ItemID.SilverCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(TextureAssets.Item[ItemID.CopperCoin].Value, dimensions.Position() + new Vector2(80f + 60f, 4f), TextureAssets.Item[ItemID.CopperCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
 
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, Main.fontMouseText, platinum.ToString(), dimensions.Position() + new Vector2(80f - 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, Main.fontMouseText, gold.ToString(), dimensions.Position() + new Vector2(80f - 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, Main.fontMouseText, silver.ToString(), dimensions.Position() + new Vector2(80f + 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, Main.fontMouseText, copper.ToString(), dimensions.Position() + new Vector2(80f + 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
+                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, platinum.ToString(), dimensions.Position() + new Vector2(80f - 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
+                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, gold.ToString(), dimensions.Position() + new Vector2(80f - 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
+                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, silver.ToString(), dimensions.Position() + new Vector2(80f + 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
+                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, copper.ToString(), dimensions.Position() + new Vector2(80f + 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
             }
             else
             {
-                Texture2D texture = Main.itemTexture[HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency];
+                Texture2D texture = TextureAssets.Item[HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency].Value;
 
                 Vector2 textureSize = new Vector2(texture.Width, texture.Height);
                 Vector2 slotSize = new Vector2(24, 24);
@@ -695,10 +709,8 @@ namespace HairLoader.UI
                     price += HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].colorPrice;
                 }
 
-
                 spriteBatch.Draw(texture, dimensions.Position() + new Vector2(dimensions.Width/2 - 10, 0f), texture.Bounds, Color.White, 0f, texture.Size() * 0.5f, scale, SpriteEffects.None, 0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, Main.fontMouseText, price.ToString(), dimensions.Position() + new Vector2(78f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-
+                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, price.ToString(), dimensions.Position() + new Vector2(78f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
             }
         }
     }
