@@ -37,7 +37,13 @@ namespace HairLoader
 
         public override void Unload()
         {
-
+            if (!Main.dedServ)
+            {
+                HairWindow = null;
+                HairWindowInterface = null;
+            }
+            
+            Instance = null;
         }
 
         public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)

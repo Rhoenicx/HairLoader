@@ -7,6 +7,7 @@ using Terraria.ID;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
+using ReLogic.Content;
 using static Terraria.ModLoader.ModContent;
 
 namespace HairLoader.UI
@@ -117,7 +118,7 @@ namespace HairLoader.UI
             HairListPanel.SetPadding(10);
             HairListPanel.BackgroundColor = new Color(53, 74, 151);
             
-            HairGrid = new UIGrid(6);
+            HairGrid = new UIGrid(7);
             HairGrid.Width.Set(-16f, 1f);
             HairGrid.Height.Set(0f, 1f);
             HairGrid.ListPadding = 6f;
@@ -383,7 +384,7 @@ namespace HairLoader.UI
 
                 foreach (var _hairName in HairLoader.HairTable[_modName.Key])
                 {
-                    if (HairLoader.HairTable[_modName.Key][_hairName.Key].visibility)
+                    if (!HairLoader.HairTable[_modName.Key][_hairName.Key].UnlockCondition)
                     {
                         visible = true;
                         break;
@@ -421,7 +422,7 @@ namespace HairLoader.UI
             {
                 foreach (var _hairName in HairLoader.HairTable[_modName.Key])
                 {
-                    if (HairLoader.HairTable[_modName.Key][_hairName.Key].visibility)
+                    if (!HairLoader.HairTable[_modName.Key][_hairName.Key].UnlockCondition)
                     {
                         if (modName == "All" || _modName.Key == modName)
                         {
@@ -429,7 +430,7 @@ namespace HairLoader.UI
                             {
                                 UpdateUnlocks();
 
-                                if (HairLoader.HairTable[_modName.Key][_hairName.Key].index >= Main.Hairstyles.AvailableHairstyles.Count)
+                                if (!Main.Hairstyles.AvailableHairstyles.Contains(HairLoader.HairTable[_modName.Key][_hairName.Key].index))
                                 {
                                     continue;
                                 }
@@ -486,38 +487,61 @@ namespace HairLoader.UI
     internal class HairSlot : UIElement
     {
         private float scale = 1f;
+        private bool hovered = false;
+        private const int offsetX = 36;
+        private const int offsetY = -8;
 
         private string modName;
         private string hairName;
 
-        public static Texture2D backgroundTexture = TextureAssets.InventoryBack8.Value;
-        public static Texture2D myBackgroundTexture = TextureAssets.InventoryBack14.Value;
+        public static Asset<Texture2D> backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
+        public static Asset<Texture2D> highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
+        public static Asset<Texture2D> hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
 
         public HairSlot(string _modName, string _hairName)
         {
             this.modName = _modName;
             this.hairName = _hairName;
 
-            this.Width.Set(backgroundTexture.Width * scale, 0f);
-            this.Height.Set(backgroundTexture.Height * scale, 0f);
+            this.Width.Set(backgroundTexture.Width() * scale, 0f);
+            this.Height.Set(backgroundTexture.Height() * scale, 0f);
         }
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             CalculatedStyle dimensions = base.GetInnerDimensions();
-            Texture2D texture = (Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName == modName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName == hairName) ? myBackgroundTexture : backgroundTexture;
 
-            const int offsetX = 38;
+            spriteBatch.Draw(backgroundTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(backgroundTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
-            spriteBatch.Draw(texture, dimensions.Position(), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair.Value, dimensions.Center() + new Vector2(HairLoader.HairTable[modName][hairName].hairOffset, 0f), new Rectangle?(new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width(), 56)), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width(), dimensions.Height - 10) * 0.5f, 1f, SpriteEffects.None, 0f);
+            if (Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName == modName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName == hairName)
+            {
+                spriteBatch.Draw(highlightTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(highlightTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            }
+
+            if (hovered)
+            {
+                spriteBatch.Draw(hoverTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(hoverTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            }
+
+            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair.Value, dimensions.Center(), new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width(), 38), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width() + HairLoader.HairTable[modName][hairName].hairOffset - 3, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
 
             if (IsMouseHovering)
             {
                 Main.hoverItemName = hairName;
             }
+        }
+        public override void MouseOver(UIMouseEvent evt)
+        {
+            base.MouseOver(evt);
+            this.hovered = true;
+        }
+
+        public override void MouseOut(UIMouseEvent evt)
+        {
+            base.MouseOut(evt);
+            this.hovered = false;
         }
     }
 

@@ -13,6 +13,18 @@ namespace HairLoader
         public string Hair_modName = "";
         public string Hair_hairName = "";
 
+        public override void Load()
+        {
+            Hair_modName = "";
+            Hair_hairName = "";
+        }
+
+        public override void Unload()
+        {
+            Hair_modName = null;
+            Hair_hairName = null;
+        }
+
         public override void SaveData(TagCompound tag)
         {
             tag.Add("modName", Hair_modName);
@@ -101,7 +113,7 @@ namespace HairLoader
             }
                 
             // Apply the drawOffset for this hairstyle
-            drawInfo.hairOffset.X = HairLoader.HairTable[modName][hairName].hairOffset;
+            drawInfo.hairOffset.X = drawInfo.drawPlayer.direction == 1 ? HairLoader.HairTable[modName][hairName].hairOffset : -HairLoader.HairTable[modName][hairName].hairOffset;
 
             // Close the vanilla Hair Window UI if active, this one is a little broken due to swapping textures in the Main hair texture array anyway.
             if (Main.hairWindow)
