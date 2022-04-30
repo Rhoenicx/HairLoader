@@ -9,11 +9,9 @@ using Terraria.UI;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
-using Terraria.Audio;
 using Terraria.ModLoader;
 using Terraria.DataStructures;
 using ReLogic.Content;
-using ReLogic.Graphics;
 using HairLoader.UI;
 using static Terraria.ModLoader.ModContent;
 
@@ -45,9 +43,6 @@ namespace HairLoader
         // Dictionary that stores all the PlayerHairEntries
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
 
-        // Array to keep track if custom textures are loaded
-        public static VanillaTextureSlots[] VanillaTextureSlot = new VanillaTextureSlots[Terraria.Main.maxHairStyles];
-
         public static int CharacterCreatorHairCount = 0;
 
         // Point to this Mod object Instance.
@@ -62,7 +57,6 @@ namespace HairLoader
             if (!Terraria.Main.dedServ)
             {
                 HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
-                VanillaTextureSlot = new VanillaTextureSlots[Terraria.Main.maxHairStyles];
 
                 // Define a detour on MakeHairStylesMenu in the vanilla code. This detour does NOT call orig!
                 On.Terraria.GameContent.UI.States.UICharacterCreation.MakeHairsylesMenu += UICharacterCreation_MakeHairsylesMenuON;
@@ -76,8 +70,6 @@ namespace HairLoader
                 HairSlot.backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
                 HairSlot.highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
                 HairSlot.hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
-
-
 
                 // Load all the Vanilla HairStyles 
                 LoadVanillaHair();
@@ -96,27 +88,16 @@ namespace HairLoader
                     false);
                 
             }
-
             base.Load();
         }
 
         public override void Unload()
         {
             // Code not ran on server
-            if (!Terraria.Main.dedServ)
+            if (Main.dedServ)
             {
-                if (HairTable.ContainsKey("Vanilla"))
-                {
-                    foreach (KeyValuePair<string, PlayerHairEntry> entry in HairTable["Vanilla"])
-                    {
-                        TextureAssets.PlayerHair[entry.Value.index] = entry.Value.hair;
-                        TextureAssets.PlayerHairAlt[entry.Value.index] = entry.Value.hairAlt;
-                    }
-                }
-
                 // Clear the HairTable
                 HairTable = null;
-                VanillaTextureSlot = null;
             }
                
             // Clear our mod instance
@@ -256,7 +237,7 @@ namespace HairLoader
                             CharacterCreator = visible,
                             UnlockCondition = false
                         }
-                    ) ;
+                    );
                 }
                 else
                 {
@@ -272,8 +253,6 @@ namespace HairLoader
                         UnlockCondition = false
                     };
                 }
-
-                VanillaTextureSlot[i] = new VanillaTextureSlots { modName = "Vanilla", hairName = "Vanilla " + (i + 1).ToString() };
             }
 
             CalculateCharacterCreatorHairCount();
@@ -446,7 +425,7 @@ namespace HairLoader
         //----------------------------------------------------------------------------------------------------------------------------
         private void UICharacterCreation_MakeHairsylesMenuON(On.Terraria.GameContent.UI.States.UICharacterCreation.orig_MakeHairsylesMenu orig, Terraria.GameContent.UI.States.UICharacterCreation self, UIElement middleInnerPanel)
         {
-            Terraria.Main.Hairstyles.UpdateUnlocks();
+            Main.Hairstyles.UpdateUnlocks();
             UIElement element = new UIElement()
             {
                 Width = StyleDimension.FromPixelsAndPercent(-10f, 1f),
@@ -486,7 +465,7 @@ namespace HairLoader
                 {
                     if (hair.Value.CharacterCreator)
                     {
-                        UICustomHairStyleButton uiHairStyleButton1 = new UICustomHairStyleButton(Terraria.Main.PendingPlayer, mod.Key, hair.Key);
+                        UICustomHairStyleButton uiHairStyleButton1 = new UICustomHairStyleButton(Main.PendingPlayer, mod.Key, hair.Key);
                         uiHairStyleButton1.Left = StyleDimension.FromPixels((float)((double)(index % 10) * 46.0 + 6.0));
                         uiHairStyleButton1.Top = StyleDimension.FromPixels((float)((double)(index / 10) * 48.0 + 1.0));
                         UICustomHairStyleButton uiHairStyleButton2 = uiHairStyleButton1;
@@ -832,12 +811,9 @@ namespace HairLoader
             }
         }
     }
+
     public enum HairLoaderMessageType : byte
     {
         HairUpdate
     }
-
-
-
-
 }
