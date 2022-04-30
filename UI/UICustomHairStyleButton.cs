@@ -57,7 +57,7 @@ namespace HairLoader.UI
             }
 
             int offsetX = 4;
-            int offsetY = -36;
+            int offsetY = -38;
 
             spriteBatch.Draw(TextureAssets.Players[0, 0].Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(this._selectedBorderTexture.Size(), 2f)), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), this._player.skinColor, 0.0f, new Vector2(offsetX, this.GetDimensions().Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(TextureAssets.Players[0, 1].Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(this._selectedBorderTexture.Size(), 2f)), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, this.GetDimensions().Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
