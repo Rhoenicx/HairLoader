@@ -7,6 +7,7 @@ using Terraria.ID;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
+using Terraria.ModLoader;
 using ReLogic.Content;
 using static Terraria.ModLoader.ModContent;
 
@@ -18,7 +19,7 @@ namespace HairLoader.UI
         public static bool Visible;
 
         // Highlights
-        public static string highlightMod = "All";
+        public static string highlightDisplayName = "All";
 
         // New Selected Entry
         public static string selectMod;
@@ -159,7 +160,7 @@ namespace HairLoader.UI
             BuyText.Left.Set(630f, 0f);
             BuyText.OnMouseOver += (a, b) => 
             {
-                if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor)
+                if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor)
                 {
                     BuyText.TextColor = new Color(255, 199, 0);
                     BuyText.SetText("Buy", 1.5f, false);
@@ -225,8 +226,8 @@ namespace HairLoader.UI
 
         internal void OpenHairWindow()
         {
-            OldModName = Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName;
-            OldHairName = Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName;
+            OldModName = Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName;
+            OldHairName = Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName;
             OldHairColor = Main.player[Main.myPlayer].hairColor;
 
             selectMod = OldModName;
@@ -242,7 +243,7 @@ namespace HairLoader.UI
 
             UpdateUnlocks();
             UpdateModList();
-            UpdateHairGrid(highlightMod);
+            UpdateHairGrid(true, highlightDisplayName);
 
             Visible = true;
 
@@ -256,8 +257,8 @@ namespace HairLoader.UI
                 return;
             }
 
-            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName = OldModName;
-            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName = OldHairName;
+            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = OldModName;
+            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = OldHairName;
             Main.player[Main.myPlayer].hairColor = OldHairColor;
 
             Visible = false;
@@ -272,8 +273,8 @@ namespace HairLoader.UI
 
         internal void BuyHairWindow()
         {
-            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName = selectMod;
-            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName = selectHair;
+            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = selectMod;
+            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = selectHair;
             Main.player[Main.myPlayer].hairColor = Main.hslToRgb(Color_Hue, Color_Saturation, Color_Luminosity);
 
             HairLoader.Instance.ChangePlayerHairStyle(selectMod, selectHair, Main.myPlayer);
@@ -290,13 +291,13 @@ namespace HairLoader.UI
 
         internal bool CanBuyHair()
         {
-            if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor)
+            if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName) || Main.player[Main.myPlayer].hairColor != OldHairColor)
             {
                 if (HairLoader.HairTable[selectMod][selectHair].currency == -1)
                 {
                     int price = 0;
 
-                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName))
+                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
                     {
                         price += HairLoader.HairTable[selectMod][selectHair].hairPrice;
                     }
@@ -316,7 +317,7 @@ namespace HairLoader.UI
                     int itemCount = 0;
                     int price = 0;
 
-                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName != OldHairName))
+                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
                     {
                         price += HairLoader.HairTable[selectMod][selectHair].hairPrice;
                     }
@@ -372,33 +373,50 @@ namespace HairLoader.UI
             ModSlot modListEntryAll = new ModSlot("All");
             modListEntryAll.OnClick += (a, b) =>
             {
-                highlightMod = "All";
-                UpdateHairGrid(highlightMod);
+                highlightDisplayName = "All";
+                UpdateHairGrid(true, highlightDisplayName);
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };
             ModList.Add(modListEntryAll);
 
-            foreach (var _modName in HairLoader.HairTable)
+            foreach (var _modClassName in HairLoader.HairTable)
             {
                 bool visible = false;
 
-                foreach (var _hairName in HairLoader.HairTable[_modName.Key])
+                // Update visibility of mods and hair
+                foreach (var _hairEntryName in HairLoader.HairTable[_modClassName.Key])
                 {
-                    if (!HairLoader.HairTable[_modName.Key][_hairName.Key].UnlockCondition)
+                    if (HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].UnlockCondition)
+                    {
+                        ModLoader.TryGetMod(_modClassName.Key , out Mod mod);
+                        if (mod != null)
+                        {
+                            mod.Call(
+                                "UpdateHairStyleVisibility",
+                                _modClassName,
+                                _hairEntryName
+                                );
+                        }
+
+                        if (HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible)
+                        {
+                            visible = true;
+                        }
+                    }
+                    else
                     {
                         visible = true;
-                        break;
                     }
                 }
 
                 if (visible)
                 {
-                    ModSlot modListEntry = new ModSlot(_modName.Key);
+                    ModSlot modListEntry = new ModSlot(HairLoader.ModDisplayNames[_modClassName.Key]);
 
                     modListEntry.OnClick += (a, b) =>
                     {
-                        highlightMod = _modName.Key;
-                        UpdateHairGrid(_modName.Key);
+                        highlightDisplayName = HairLoader.ModDisplayNames[_modClassName.Key];
+                        UpdateHairGrid(false, HairLoader.ModDisplayNames[_modClassName.Key]);
                         SoundEngine.PlaySound(SoundID.MenuTick);
                     };
 
@@ -414,36 +432,44 @@ namespace HairLoader.UI
             Main.hairWindow = false;
         }
 
-        internal void UpdateHairGrid(string modName)
+        internal void UpdateHairGrid(bool AllButton, string highlightDisplayName)
         {
             HairGrid.Clear();
 
-            foreach (var _modName in HairLoader.HairTable)
+            foreach (var _modClassName in HairLoader.HairTable)
             {
-                foreach (var _hairName in HairLoader.HairTable[_modName.Key])
+                foreach (var _hairEntryName in HairLoader.HairTable[_modClassName.Key])
                 {
-                    if (!HairLoader.HairTable[_modName.Key][_hairName.Key].UnlockCondition)
+                    if (!HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].UnlockCondition)
                     {
-                        if (modName == "All" || _modName.Key == modName)
+                        if (AllButton || HairLoader.ModDisplayNames[_modClassName.Key] == highlightDisplayName)
                         {
-                            if (_modName.Key == "Vanilla")
+                            // Check vanilla unlock conditions
+                            if (_modClassName.Key == "Vanilla")
                             {
                                 UpdateUnlocks();
 
-                                if (!Main.Hairstyles.AvailableHairstyles.Contains(HairLoader.HairTable[_modName.Key][_hairName.Key].index))
+                                if (!Main.Hairstyles.AvailableHairstyles.Contains(HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].index))
                                 {
                                     continue;
                                 }
                             }
 
-                            HairSlot slot = new HairSlot(_modName.Key, _hairName.Key);
+                            // Check if this hairstyle should be displayed
+                            if (!HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible)
+                            {
+                                continue;
+                            }
+
+                            // Add the hairstyle
+                            HairSlot slot = new HairSlot(_modClassName.Key, _hairEntryName.Key);
 
                             slot.OnClick += (a, b) =>
                             {
-                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName = _modName.Key;
-                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName = _hairName.Key;
-                                selectMod = _modName.Key;
-                                selectHair = _hairName.Key;
+                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = _modClassName.Key;
+                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = _hairEntryName.Key;
+                                selectMod = _modClassName.Key;
+                                selectHair = _hairEntryName.Key;
                                 SoundEngine.PlaySound(SoundID.MenuTick);
                             };
 
@@ -464,14 +490,14 @@ namespace HairLoader.UI
         // Elements
         private UIPanel ModEntryPanel;
 
-        public ModSlot(string _modName) : base (_modName)
+        public ModSlot(string _modClassName) : base (_modClassName)
         {
 
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            if (Text == HairWindow.highlightMod)
+            if (Text == HairWindow.highlightDisplayName)
             {
                 BackgroundColor = new Color(255, 199, 0);
             }
@@ -491,17 +517,17 @@ namespace HairLoader.UI
         private const int offsetX = 36;
         private const int offsetY = -8;
 
-        private string modName;
-        private string hairName;
+        private string modClassName;
+        private string hairEntryName;
 
         public static Asset<Texture2D> backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
         public static Asset<Texture2D> highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
         public static Asset<Texture2D> hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
 
-        public HairSlot(string _modName, string _hairName)
+        public HairSlot(string _modClassName, string _hairEntryName)
         {
-            this.modName = _modName;
-            this.hairName = _hairName;
+            this.modClassName = _modClassName;
+            this.hairEntryName = _hairEntryName;
 
             this.Width.Set(backgroundTexture.Width() * scale, 0f);
             this.Height.Set(backgroundTexture.Height() * scale, 0f);
@@ -512,7 +538,7 @@ namespace HairLoader.UI
 
             spriteBatch.Draw(backgroundTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(backgroundTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
 
-            if (Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modName == modName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairName == hairName)
+            if (Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName == modClassName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName == hairEntryName)
             {
                 spriteBatch.Draw(highlightTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(highlightTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
@@ -525,11 +551,11 @@ namespace HairLoader.UI
             spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(HairLoader.HairTable[modName][hairName].hair.Value, dimensions.Center(), new Rectangle(0, 0, HairLoader.HairTable[modName][hairName].hair.Width(), 38), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modName][hairName].hair.Width() + HairLoader.HairTable[modName][hairName].hairOffset - 3, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(HairLoader.HairTable[modClassName][hairEntryName].hair.Value, dimensions.Center(), new Rectangle(0, 0, HairLoader.HairTable[modClassName][hairEntryName].hair.Width(), 38), Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(HairLoader.HairTable[modClassName][hairEntryName].hair.Width() + HairLoader.HairTable[modClassName][hairEntryName].hairOffset - 3, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
 
             if (IsMouseHovering)
             {
-                Main.hoverItemName = hairName;
+                Main.hoverItemName = hairEntryName;
             }
         }
         public override void MouseOver(UIMouseEvent evt)

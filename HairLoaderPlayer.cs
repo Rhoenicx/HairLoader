@@ -10,31 +10,31 @@ namespace HairLoader
 {
     public class HairLoaderPlayer : ModPlayer
     {
-        public string Hair_modName = "";
-        public string Hair_hairName = "";
+        public string Hair_modClassName = "";
+        public string Hair_hairEntryName = "";
 
         public override void Load()
         {
-            Hair_modName = "";
-            Hair_hairName = "";
+            Hair_modClassName = "";
+            Hair_hairEntryName = "";
         }
 
         public override void Unload()
         {
-            Hair_modName = null;
-            Hair_hairName = null;
+            Hair_modClassName = null;
+            Hair_hairEntryName = null;
         }
 
         public override void SaveData(TagCompound tag)
         {
-            tag.Add("modName", Hair_modName);
-            tag.Add("hairName", Hair_hairName);
+            tag.Add("modClassName", Hair_modClassName);
+            tag.Add("hairEntryName", Hair_hairEntryName);
         }
 
         public override void LoadData(TagCompound tag)
         {
-            Hair_modName = tag.GetString("modName");
-            Hair_hairName = tag.GetString("hairName");
+            Hair_modClassName = tag.GetString("modClassName");
+            Hair_hairEntryName = tag.GetString("hairEntryName");
         }
 
         public override void OnEnterWorld(Player player)
@@ -43,7 +43,7 @@ namespace HairLoader
 
             if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer)
             {
-                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairName, player.whoAmI);
+                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName, player.whoAmI);
             }
         }
 
@@ -51,7 +51,7 @@ namespace HairLoader
         {
             if (Main.netMode == NetmodeID.MultiplayerClient && player.whoAmI == Main.myPlayer)
             {
-                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairName, player.whoAmI);
+                HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName, player.whoAmI);
             }
         }
     }

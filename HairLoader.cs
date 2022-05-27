@@ -28,12 +28,7 @@ namespace HairLoader
         public int colorPrice { get; set; }             // The price to change the color of this Hairstyle in the amount of currency above
         public bool CharacterCreator { get; set; }      // Whether this hairstyle is available at the character creator
         public bool UnlockCondition { get; set; }       // Whether this hairstyle must be unlocked to appear in the Stylist's hairwindow
-    }
-
-    public class VanillaTextureSlots
-    { 
-        public string modName { get; set; }
-        public string hairName { get; set; }
+        public bool HairWindowVisible { get; set; }
     }
 
     class HairLoader : Mod
@@ -42,6 +37,7 @@ namespace HairLoader
 
         // Dictionary that stores all the PlayerHairEntries
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+        public static Dictionary<string, string> ModDisplayNames = new Dictionary<string, string>();
 
         public static int CharacterCreatorHairCount = 0;
 
@@ -57,9 +53,11 @@ namespace HairLoader
             if (!Terraria.Main.dedServ)
             {
                 HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
+                ModDisplayNames = new Dictionary<string, string>();
 
                 // Define a detour on MakeHairStylesMenu in the vanilla code. This detour does NOT call orig!
                 On.Terraria.GameContent.UI.States.UICharacterCreation.MakeHairsylesMenu += UICharacterCreation_MakeHairsylesMenuON;
+                On.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_01_BackHair += PlayerDrawLayers_DrawPlayer_01_BackHair;
                 On.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_21_Head += PlayerDrawLayers_DrawPlayer_21_Head;
 
                 // Load UI textures
@@ -76,6 +74,7 @@ namespace HairLoader
                 
                 // Register 1 example HairStyle
                 RegisterCustomHair(
+                    "HairLoader",
                     "HairLoader",
                     "Example_1",
                     Assets.Request<Texture2D>("HairStyles/HairLoader/Example_1"),
@@ -98,6 +97,7 @@ namespace HairLoader
             {
                 // Clear the HairTable
                 HairTable = null;
+                ModDisplayNames = null;
             }
                
             // Clear our mod instance
@@ -117,27 +117,37 @@ namespace HairLoader
                 if (messageType == "RegisterHairStyle")
                 {
                     RegisterCustomHair(
-                        args[1] as string, //modName
-                        args[2] as string, //hairName
-                        args[3] as Asset<Texture2D>, //hair Texture
-                        args[4] as Asset<Texture2D>, //hairAlt texture
-                        Convert.ToSingle(args[5]), // X offset
-                        Convert.ToInt32(args[6]), // currency
-                        Convert.ToInt32(args[7]), // hair price
-                        Convert.ToInt32(args[8]), // color price
-                        args[9] as bool?, // Character Creation
-                        args[10] as bool? // Unlock Condition
+                        args[1] as string, //modClassName
+                        args[2] as string, //modDisplayName
+                        args[3] as string, //hairEntryName
+                        args[4] as Asset<Texture2D>, //hair Texture
+                        args[5] as Asset<Texture2D>, //hairAlt texture
+                        Convert.ToSingle(args[6]), // X offset
+                        Convert.ToInt32(args[7]), // currency
+                        Convert.ToInt32(args[8]), // hair price
+                        Convert.ToInt32(args[9]), // color price
+                        args[10] as bool?, // Character Creation
+                        args[11] as bool? // Unlock Condition
                     );
-                    
+
 
                     return "Success";
+                }
+
+                else if (messageType == "UpdateHairStyleVisibility")
+                {
+                    UpdateHairStyleVisibility(
+                        args[1] as string, //modClassName
+                        args[2] as string, //hairEntryName
+                        args[3] as bool? //the received visibility
+                        );
                 }
 
                 else if (messageType == "ChangePlayerHairStyle")
                 {
                     ChangePlayerHairStyle(
-                        args[1] as string, //modName
-                        args[2] as string, //hairName
+                        args[1] as string, //modClassName
+                        args[2] as string, //hairEntryName
                         Convert.ToInt32(args[3]) //playerID
                     );
 
@@ -164,35 +174,35 @@ namespace HairLoader
                 case HairLoaderMessageType.HairUpdate:
                 {
                     int PlayerID = reader.ReadByte();
-                    string modName = reader.ReadString();
-                    string hairName = reader.ReadString();
+                    string modClassName = reader.ReadString();
+                    string hairEntryName = reader.ReadString();
 
-                    Terraria.Player player = Main.player[PlayerID];
+                    Player player = Main.player[PlayerID];
 
-                    player.GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
-                    player.GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
+                    player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName = modClassName;
+                    player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = hairEntryName;
 
-                    if (Terraria.Main.netMode != NetmodeID.Server)
+                    if (Main.netMode != NetmodeID.Server)
                     {
-                        if (HairTable.ContainsKey(modName))
+                        if (HairTable.ContainsKey(modClassName))
                         {
-                            if (HairTable[modName].ContainsKey(hairName))
+                            if (HairTable[modClassName].ContainsKey(hairEntryName))
                             {
-                                if (HairTable[modName][hairName].index != -1)
+                                if (HairTable[modClassName][hairEntryName].index != -1)
                                 {
-                                    player.hair = HairTable[modName][hairName].index;
+                                    player.hair = HairTable[modClassName][hairEntryName].index;
                                 }
                             }
                         }
                     }
 
-                    if (Terraria.Main.netMode == NetmodeID.Server)
+                    if (Main.netMode == NetmodeID.Server)
                     {
                         ModPacket packet = GetPacket();
                         packet.Write((byte)HairLoaderMessageType.HairUpdate);
                         packet.Write((byte)PlayerID);
-                        packet.Write(modName);
-                        packet.Write(hairName);
+                        packet.Write(modClassName);
+                        packet.Write(hairEntryName);
                         packet.Send(-1, whoAmI);
                     }
 
@@ -213,7 +223,7 @@ namespace HairLoader
 
             for (int i = 0; i < Main.maxHairStyles; i++)
             {
-                Terraria.Main.instance.LoadHair(i);
+                Main.instance.LoadHair(i);
                 bool visible = Main.Hairstyles.AvailableHairstyles.Contains(i);
 
                 if (!HairTable.ContainsKey("Vanilla"))
@@ -235,7 +245,8 @@ namespace HairLoader
                             hairPrice = i <= 51 ? 10000 : 50000,
                             colorPrice = 10000,
                             CharacterCreator = visible,
-                            UnlockCondition = false
+                            UnlockCondition = false,
+                            HairWindowVisible = true
                         }
                     );
                 }
@@ -250,8 +261,14 @@ namespace HairLoader
                         hairPrice = i <= 51 ? 10000 : 50000, 
                         colorPrice = 10000,
                         CharacterCreator = visible,
-                        UnlockCondition = false
+                        UnlockCondition = false,
+                        HairWindowVisible = true
                     };
+                }
+
+                if (!ModDisplayNames.ContainsKey("Vanilla"))
+                {
+                    ModDisplayNames.Add("Vanilla", "Terraria");
                 }
             }
 
@@ -274,21 +291,26 @@ namespace HairLoader
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
-        public static void RegisterCustomHair(string modName, string hairName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition )
+        public static void RegisterCustomHair(string modClassName, string modDisplayName, string hairEntryName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition )
         {
-            if (modName == "Vanilla" || modName == "All")
+            if (modClassName == "Vanilla" || modClassName == "All")
             {
-                modName += "_";
+                modClassName += "_";
             }
             
-            if (!HairTable.ContainsKey(modName))
+            if (!HairTable.ContainsKey(modClassName))
             {
-                HairTable.Add(modName, new Dictionary<string, PlayerHairEntry>());
+                HairTable.Add(modClassName, new Dictionary<string, PlayerHairEntry>());
             }
 
-            if (!HairTable[modName].ContainsKey(hairName))
+            if (!ModDisplayNames.ContainsKey(modClassName))
             {
-                HairTable[modName].Add(hairName, new PlayerHairEntry { 
+                ModDisplayNames.Add(modClassName, modDisplayName);
+            }
+
+            if (!HairTable[modClassName].ContainsKey(hairEntryName))
+            {
+                HairTable[modClassName].Add(hairEntryName, new PlayerHairEntry { 
                     hair = hair, 
                     hairAlt = hairAlt,
                     hairOffset = hairOffset,
@@ -297,7 +319,8 @@ namespace HairLoader
                     hairPrice = hairPrice, 
                     colorPrice = colorPrice,
                     CharacterCreator = CharacterCreator.HasValue ? CharacterCreator.Value : false,
-                    UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false
+                    UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false,
+                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false
                 });
 
                 if (CharacterCreator == true)
@@ -307,7 +330,7 @@ namespace HairLoader
             }
             else
             {
-                HairTable[modName][hairName] = new PlayerHairEntry { 
+                HairTable[modClassName][hairEntryName] = new PlayerHairEntry { 
                     hair = hair, 
                     hairAlt = hairAlt,
                     hairOffset = hairOffset,
@@ -316,30 +339,34 @@ namespace HairLoader
                     hairPrice = hairPrice, 
                     colorPrice = colorPrice,
                     CharacterCreator = CharacterCreator.HasValue ? CharacterCreator.Value : false,
-                    UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false
+                    UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false,
+                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false
                 };
             }
         }
 
-//-----------------------------------------------------------------------------------------------------------------------------
-        public void ChangePlayerHairStyle (string modName, string hairName, int PlayerID)
+        public static void UpdateHairStyleVisibility(string modClassName, string hairEntryName, bool? newVisibility)
         {
-            if (!HairTable.ContainsKey(modName))
+            if (HairTable.ContainsKey(modClassName) && HairTable[modClassName].ContainsKey(hairEntryName))
+            {
+                HairTable[modClassName][hairEntryName].HairWindowVisible = newVisibility.HasValue ? newVisibility.Value : false;
+            }
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------------------
+        public void ChangePlayerHairStyle (string modClassName, string hairEntryName, int PlayerID)
+        {
+            if (!HairTable.ContainsKey(modClassName) || !HairTable[modClassName].ContainsKey(hairEntryName))
             {
                 return;
             }
 
-            if (!HairTable[modName].ContainsKey(hairName))
-            {
-                return;
-            }
+            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = modClassName;
+            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = hairEntryName;
 
-            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
-            Main.player[PlayerID].GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
-
-            if (HairTable[modName][hairName].index > -1 && HairTable[modName][hairName].index < Main.maxHairStyles)
+            if (HairTable[modClassName][hairEntryName].index > -1 && HairTable[modClassName][hairEntryName].index < Main.maxHairStyles)
             {
-                Main.player[PlayerID].hair = HairTable[modName][hairName].index;
+                Main.player[PlayerID].hair = HairTable[modClassName][hairEntryName].index;
             }
 
             if (PlayerID == Main.myPlayer)
@@ -349,23 +376,23 @@ namespace HairLoader
                     ModPacket packet = GetPacket();
                     packet.Write((byte)HairLoaderMessageType.HairUpdate);
                     packet.Write((byte)PlayerID);
-                    packet.Write(modName);
-                    packet.Write(hairName);
+                    packet.Write(modClassName);
+                    packet.Write(hairEntryName);
                     packet.Send();
                 }
             }
         }
 
-        public static bool getModAndHairNames(ref string modName, ref string hairName, int index)
+        public static bool getModAndHairNames(ref string modClassName, ref string hairEntryName, int index)
         {
-            foreach (var mod in HairLoader.HairTable)
+            foreach (var mod in HairTable)
             {
-                foreach (var hair in HairLoader.HairTable[mod.Key])
+                foreach (var hair in HairTable[mod.Key])
                 {
                     if (HairTable[mod.Key][hair.Key].index == index)
                     {
-                        modName = mod.Key;
-                        hairName = hair.Key;
+                        modClassName = mod.Key;
+                        hairEntryName = hair.Key;
                         return true;
                     }
                 }
@@ -376,39 +403,39 @@ namespace HairLoader
         //----------------------------------------------------------------------------------------------------------------------------
         //-----------------------------------------------------  HAIR   --------------------------------------------------------------
         //----------------------------------------------------------------------------------------------------------------------------
-        private void DrawHair(ref PlayerDrawSet drawinfo, bool altHair, Vector2 position)
+        private void DrawHair(ref PlayerDrawSet drawinfo, bool altHair, Vector2 position, bool backHair = false)
         {
-            string modName = drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName;
-            string hairName = drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName;
+            string modClassName = drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modClassName;
+            string hairEntryName = drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName;
 
             bool valid = true;
-            if (!HairTable.ContainsKey(modName))
+            if (!HairTable.ContainsKey(modClassName))
             {
                 valid = false;
             }
-            else if (!HairTable[modName].ContainsKey(hairName))
+            else if (!HairTable[modClassName].ContainsKey(hairEntryName))
             {
                 valid = false;
             }
 
             if (!valid)
             {
-                if (getModAndHairNames(ref modName, ref hairName, drawinfo.drawPlayer.hair))
+                if (getModAndHairNames(ref modClassName, ref hairEntryName, drawinfo.drawPlayer.hair))
                 {
-                    drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modName = modName;
-                    drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairName = hairName;
+                    drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modClassName = modClassName;
+                    drawinfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = hairEntryName;
                 }
                 else
                 {
-                    Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modName + " - " + hairName + " ! Report this to the developer!");
+                    Logger.Warn("HAIRLOADER: HAIRTABLE DOES NOT CONTAIN VANILLA HAIRSTYLE: " + modClassName + " - " + hairEntryName + " ! Report this to the developer!");
                     return;
                 }
             }
 
             DrawData data = new DrawData(
-                altHair ? HairTable[modName][hairName].hairAlt.Value : HairTable[modName][hairName].hair.Value,
-                position + new Vector2(drawinfo.drawPlayer.direction == 1 ? HairTable[modName][hairName].hairOffset : -HairTable[modName][hairName].hairOffset, 0f),
-                new Rectangle?(drawinfo.hairFrontFrame),
+                altHair ? HairTable[modClassName][hairEntryName].hairAlt.Value : HairTable[modClassName][hairEntryName].hair.Value,
+                position + new Vector2(drawinfo.drawPlayer.direction == 1 ? HairTable[modClassName][hairEntryName].hairOffset : -HairTable[modClassName][hairEntryName].hairOffset, 0f),
+                backHair ? new Rectangle?(drawinfo.hairBackFrame) : new Rectangle ?(drawinfo.hairFrontFrame),
                 drawinfo.colorHair,
                 drawinfo.drawPlayer.headRotation,
                 drawinfo.headVect,
@@ -479,6 +506,23 @@ namespace HairLoader
             // Set the private variable _hairstylesContainer
             FieldInfo fi = typeof(Terraria.GameContent.UI.States.UICharacterCreation).GetField("_hairstylesContainer", BindingFlags.NonPublic | BindingFlags.Instance);
             fi.SetValue(self, element);
+        }
+
+        private void PlayerDrawLayers_DrawPlayer_01_BackHair(On.Terraria.DataStructures.PlayerDrawLayers.orig_DrawPlayer_01_BackHair orig, ref PlayerDrawSet drawinfo)
+        {
+            if (drawinfo.hideHair || !drawinfo.backHairDraw)
+                return;
+            Vector2 position = Vector2.Add(Vector2.Add(Vector2.Add(new Vector2((float)(int)(drawinfo.Position.X - Main.screenPosition.X - (double)(drawinfo.drawPlayer.bodyFrame.Width / 2) + (double)(drawinfo.drawPlayer.width / 2)), (float)(int)(drawinfo.Position.Y - Main.screenPosition.Y + (double)drawinfo.drawPlayer.height - (double)(float)drawinfo.drawPlayer.bodyFrame.Height + 4.0)), drawinfo.drawPlayer.headPosition), drawinfo.headVect), drawinfo.hairOffset);
+            if (drawinfo.drawPlayer.head == -1 || drawinfo.fullHair || drawinfo.drawsBackHairWithoutHeadgear)
+            {
+                DrawHair(ref drawinfo, false, position, true);
+            }
+            else
+            {
+                if (!drawinfo.hatHair)
+                    return;
+                DrawHair(ref drawinfo, true, position, true);
+            }
         }
 
         private void PlayerDrawLayers_DrawPlayer_21_Head(On.Terraria.DataStructures.PlayerDrawLayers.orig_DrawPlayer_21_Head orig, ref PlayerDrawSet drawinfo)
