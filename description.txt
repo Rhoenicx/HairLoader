@@ -1,0 +1,11 @@
+HairLoader mod aims to add a way for other mods to easily add custom hairstyles to Terraria.
+
+- Contains new Hair UI for the Stylist
+- Add hairstyles through mod calls
+- Add custom currency with item ID's
+- Specify the price of the hairstyle and the color
+- Choose if the style is available in the character creator
+- Add custom unlock conditions (Requires a mod call on the mod that added the hairstyle)
+
+Currently the mod uses On.Terraria on a couple of player drawlayers for the custom hairstyles to show up, this may break mods.
+Future plans is to do this by adding new playerlayers and hiding/disabling the vanilla ones.

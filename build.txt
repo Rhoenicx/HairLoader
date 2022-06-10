@@ -1,7 +1,7 @@
 author = Rhoenicx
-version = 0.0.0.1
+version = 0.1.0.0
 displayName = HairLoader
 hideCode = true
 hideResources = true
-homepage = None
-buildIgnore = obj/,bin/
+homepage = https://github.com/Rhoenicx/HairLoader
+buildIgnore = obj/,bin/,.vs/,.git/
