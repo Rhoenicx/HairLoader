@@ -243,6 +243,8 @@ namespace HairLoader.UI
 
             UpdateUnlocks();
             UpdateModList();
+
+            highlightDisplayName = "All";
             UpdateHairGrid(true, highlightDisplayName);
 
             Visible = true;
@@ -392,7 +394,7 @@ namespace HairLoader.UI
                         if (mod != null)
                         {
                             object value = mod.Call(
-                                "HairLoader.UnlockCondition",
+                                "HairLoaderUnlockCondition",
                                 _hairEntryName.Key
                                 );
 

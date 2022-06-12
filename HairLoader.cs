@@ -146,7 +146,7 @@ namespace HairLoader
                 }
 
                 // This is the example mod call needed for custom unlock conditions
-                else if (messageType == "HairLoader.UnlockCondition")
+                else if (messageType == "HairLoaderUnlockCondition")
                 {
                     // Create a switch with a case for every hairstyle added, enter the same name of the hairstyle you used to add them
                     switch (args[1] as string)
