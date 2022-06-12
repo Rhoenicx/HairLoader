@@ -297,7 +297,7 @@ namespace HairLoader.UI
                 {
                     int price = 0;
 
-                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
+                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
                     {
                         price += HairLoader.HairTable[selectMod][selectHair].hairPrice;
                     }
@@ -391,16 +391,20 @@ namespace HairLoader.UI
                         ModLoader.TryGetMod(_modClassName.Key , out Mod mod);
                         if (mod != null)
                         {
-                            mod.Call(
-                                "UpdateHairStyleVisibility",
-                                _modClassName,
-                                _hairEntryName
+                            object value = mod.Call(
+                                "HairLoader.UnlockCondition",
+                                _hairEntryName.Key
                                 );
-                        }
 
-                        if (HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible)
-                        {
-                            visible = true;
+                            if (value is bool)
+                            {
+                                HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible = (bool)value;
+
+                                if ((bool)value && !visible)
+                                {
+                                    visible = true;
+                                }
+                            }
                         }
                     }
                     else
@@ -440,42 +444,35 @@ namespace HairLoader.UI
             {
                 foreach (var _hairEntryName in HairLoader.HairTable[_modClassName.Key])
                 {
-                    if (!HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].UnlockCondition)
+                    if (AllButton || HairLoader.ModDisplayNames[_modClassName.Key] == highlightDisplayName)
                     {
-                        if (AllButton || HairLoader.ModDisplayNames[_modClassName.Key] == highlightDisplayName)
+                        // Check vanilla unlock conditions
+                        if (_modClassName.Key == "Vanilla")
                         {
-                            // Check vanilla unlock conditions
-                            if (_modClassName.Key == "Vanilla")
-                            {
-                                UpdateUnlocks();
-
-                                if (!Main.Hairstyles.AvailableHairstyles.Contains(HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].index))
-                                {
-                                    continue;
-                                }
-                            }
-
-                            // Check if this hairstyle should be displayed
-                            if (!HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible)
-                            {
-                                continue;
-                            }
-
-                            // Add the hairstyle
-                            HairSlot slot = new HairSlot(_modClassName.Key, _hairEntryName.Key);
-
-                            slot.OnClick += (a, b) =>
-                            {
-                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = _modClassName.Key;
-                                Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = _hairEntryName.Key;
-                                selectMod = _modClassName.Key;
-                                selectHair = _hairEntryName.Key;
-                                SoundEngine.PlaySound(SoundID.MenuTick);
-                            };
-
-                            HairGrid._items.Add(slot);
-                            HairGrid._innerList.Append(slot);
+                            UpdateUnlocks();
+                            HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible = Main.Hairstyles.AvailableHairstyles.Contains(HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].index);
                         }
+
+                        // Check if this hairstyle should be displayed
+                        if (!HairLoader.HairTable[_modClassName.Key][_hairEntryName.Key].HairWindowVisible)
+                        {
+                            continue;
+                        }
+
+                        // Add the hairstyle
+                        HairSlot slot = new HairSlot(_modClassName.Key, _hairEntryName.Key);
+
+                        slot.OnClick += (a, b) =>
+                        {
+                            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = _modClassName.Key;
+                            Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = _hairEntryName.Key;
+                            selectMod = _modClassName.Key;
+                            selectHair = _hairEntryName.Key;
+                            SoundEngine.PlaySound(SoundID.MenuTick);
+                        };
+
+                        HairGrid._items.Add(slot);
+                        HairGrid._innerList.Append(slot);
                     }
                 }
             }

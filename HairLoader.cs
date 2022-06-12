@@ -5,6 +5,7 @@ using System.IO;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
+using Terraria.Audio;
 using Terraria.UI;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
@@ -70,24 +71,35 @@ namespace HairLoader
                 HairSlot.hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
 
                 // Load all the Vanilla HairStyles 
-                LoadVanillaHair();
-                
-                // Register 1 example HairStyle
-                RegisterCustomHair(
-                    "HairLoader",
-                    "HairLoader",
-                    "Example_1",
-                    Assets.Request<Texture2D>("HairStyles/HairLoader/Example_1"),
-                    Assets.Request<Texture2D>("HairStyles/HairLoader/ExampleAlt_1"),
-                    0f,
-                    2,
-                    5,
-                    1,
-                    true,
-                    false);
-                
+                LoadVanillaHair();             
             }
             base.Load();
+        }
+
+        public override void PostSetupContent()
+        {
+            // Here is the example to add a new HairStyle
+            if (!Main.dedServ)
+            {
+                ModLoader.TryGetMod("HairLoader", out Mod HairLoader);
+                if (HairLoader != null)
+                {
+                    HairLoader.Call(
+                    "RegisterHairStyle",                                                // The mod call name to add a new hairstyle
+                    "HairLoader",                                                       // Enter the name of your mod's class
+                    "Hair Loader",                                                      // The name of your mod that will be displayed in the Stylist's Hair UI
+                    "Example_1",                                                        // The name of your hairstyle - each hairstyle needs an unique name. (May be displayed in the future so choose wisely!)
+                    Assets.Request<Texture2D>("HairStyles/HairLoader/Example_1"),       // Load the hair texture as an asset (Remember to keep the texture the same height as vanilla hairstyles)
+                    Assets.Request<Texture2D>("HairStyles/HairLoader/ExampleAlt_1"),    // Load the hair alt texture as an asset
+                    0f,                                                                 // X offset of the hairstyle, use this when your texture's width is larger than default
+                    2,                                                                  // Currency to buy this hairstyle, enter -1 for coins, otherwise enter the ItemID of the custom currency (2 = dirt block)
+                    5,                                                                  // The price to buy this hairstyle
+                    1,                                                                  // The price to re-color this hairstyle
+                    false,                                                              // Available in the character creator menu?
+                    true                                                                // Has an custom unlock condition? Yes => add a mod call to your own mod, for the example see line 149
+                    );
+                }
+            }
         }
 
         public override void Unload()
@@ -130,17 +142,25 @@ namespace HairLoader
                         args[11] as bool? // Unlock Condition
                     );
 
-
                     return "Success";
                 }
 
-                else if (messageType == "UpdateHairStyleVisibility")
+                // This is the example mod call needed for custom unlock conditions
+                else if (messageType == "HairLoader.UnlockCondition")
                 {
-                    UpdateHairStyleVisibility(
-                        args[1] as string, //modClassName
-                        args[2] as string, //hairEntryName
-                        args[3] as bool? //the received visibility
-                        );
+                    // Create a switch with a case for every hairstyle added, enter the same name of the hairstyle you used to add them
+                    switch (args[1] as string)
+                    {
+                        case "Example_1":
+                            {
+                                // Write your unlock condition here, return it as a bool
+                                // This Exmaple Hairstyle is unlocked when the Eye of Cthulhu has been defeated
+                                return NPC.downedBoss1;
+                            }
+                    }
+
+                    // For safety add the return false here
+                    return false;
                 }
 
                 else if (messageType == "ChangePlayerHairStyle")
