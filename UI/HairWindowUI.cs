@@ -1,4 +1,7 @@
-﻿using ReLogic.Graphics;
+﻿using System;
+using System.Globalization;
+using ReLogic.Graphics;
+using ReLogic.OS;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Terraria;
@@ -8,6 +11,7 @@ using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
 using Terraria.ModLoader;
+using Terraria.Localization;
 using ReLogic.Content;
 using static Terraria.ModLoader.ModContent;
 
@@ -20,6 +24,7 @@ namespace HairLoader.UI
 
         // Highlights
         public static string highlightDisplayName = "All";
+        public static string highlightText = null;
 
         // New Selected Entry
         public static string selectMod;
@@ -51,9 +56,18 @@ namespace HairLoader.UI
         private UIScrollbar HairListScrollbar;
 
         // Color bars
+        private UIText ColorPanelText;
+        private UIPanel ColorPanel;
         private UIColorBar ColorHueBar;
         private UIColorBar ColorSaturationBar;
         private UIColorBar ColorLuminosityBar;
+
+        // Copy/paste/randomize buttons
+        private UIColoredImageButton CopyColorButton;
+        private UIColoredImageButton PasteColorButton;
+        private UIColoredImageButton RandomizeColorButton;
+        private UIPanel HexCodePanel;
+        private UIText HexCodeText;
 
         // Text
         private UIText BuyText;
@@ -71,11 +85,10 @@ namespace HairLoader.UI
             HairWindowPanel.Top.Set(0f, 0.6f);
             HairWindowPanel.Width.Set(852f, 0f);
             HairWindowPanel.Height.Set(300f, 0f);
-            //HairWindowBackground.BorderColor = new Color(63, 84, 161);
             HairWindowPanel.BackgroundColor = new Color(73, 94, 171);
 
             // MODS
-            ModListText = new UIText("Categories:");
+            ModListText = new UIText("Categories");
             ModListText.Top.Set(-4f, 0f);
             ModListText.Left.Pixels = 0f;
             HairWindowPanel.Append(ModListText);
@@ -83,7 +96,7 @@ namespace HairLoader.UI
             ModListPanel = new UIPanel();
             ModListPanel.Top.Set(20f, 0f);
             ModListPanel.Left.Set(0f, 0f);
-            ModListPanel.Width.Set(200f, 0f);
+            ModListPanel.Width.Set(212f, 0f);
             ModListPanel.Height.Set(-20f, 1f);
             ModListPanel.SetPadding(10);
             ModListPanel.BackgroundColor = new Color(53, 74, 151);
@@ -106,15 +119,15 @@ namespace HairLoader.UI
             HairWindowPanel.Append(ModListPanel);
 
             // Hair
-            HairListText = new UIText("Hair Style:");
+            HairListText = new UIText("Hair Style");
             HairListText.Top.Set(-4f, 0f);
-            HairListText.Left.Pixels = 208f;
+            HairListText.Left.Pixels = 220f;
             HairWindowPanel.Append(HairListText);
             
             HairListPanel = new UIPanel();
             HairListPanel.Top.Set(20f, 0f);
-            HairListPanel.Left.Set(208f, 0f);
-            HairListPanel.Width.Set(390f, 0f);
+            HairListPanel.Left.Set(220f, 0f);
+            HairListPanel.Width.Set(392f, 0f);
             HairListPanel.Height.Set(-20f, 1f);
             HairListPanel.SetPadding(10);
             HairListPanel.BackgroundColor = new Color(53, 74, 151);
@@ -136,27 +149,112 @@ namespace HairLoader.UI
 
             HairWindowPanel.Append(HairListPanel);
 
+            // Color panel text
+            ColorPanelText = new UIText("Color");
+            ColorPanelText.Top.Set(-4f, 0f);
+            ColorPanelText.Left.Pixels = 620f;
+            HairWindowPanel.Append(ColorPanelText);
+
+            // Color panel
+            ColorPanel = new UIPanel();
+            ColorPanel.Top.Set(20f, 0f);
+            ColorPanel.Left.Set(620f, 0f);
+            ColorPanel.Width.Set(212f, 0f);
+            ColorPanel.Height.Set(118f, 0f);
+            ColorPanel.SetPadding(10);
+            ColorPanel.BackgroundColor = new Color(53, 74, 151);
+            HairWindowPanel.Append(ColorPanel);
+
             // Hue Slider
             ColorHueBar = new UIColorBar(0);
-            ColorHueBar.Top.Set(20f, 0f);
-            ColorHueBar.Left.Set(630f, 0f);
+            ColorHueBar.Top.Set(34f, 0f);
+            ColorHueBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorHueBar);
 
             // Saturation Slider
             ColorSaturationBar = new UIColorBar(1);
-            ColorSaturationBar.Top.Set(56f, 0f);
-            ColorSaturationBar.Left.Set(630f, 0f);
+            ColorSaturationBar.Top.Set(70f, 0f);
+            ColorSaturationBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorSaturationBar);
 
             // Luminosity Slider
             ColorLuminosityBar = new UIColorBar(2);
-            ColorLuminosityBar.Top.Set(92f, 0f);
-            ColorLuminosityBar.Left.Set(630f, 0f);
+            ColorLuminosityBar.Top.Set(106f, 0f);
+            ColorLuminosityBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorLuminosityBar);
+
+            // Copy Color Button
+            CopyColorButton = new UIColoredImageButton((Asset<Texture2D>)Main.Assets.Request<Texture2D>("Images/UI/CharCreation/Copy"), true);
+            CopyColorButton.Top.Set(146f, 0f);
+            CopyColorButton.Left.Set(620f, 0f);
+            CopyColorButton.OnMouseDown += (a, b) =>
+            {
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                ((IClipboard)Platform.Get<IClipboard>()).Value = HexCodeText.Text;
+            };
+            HairWindowPanel.Append(CopyColorButton);
+
+            // Paste Color Button
+            PasteColorButton = new UIColoredImageButton((Asset<Texture2D>)Main.Assets.Request<Texture2D>("Images/UI/CharCreation/Paste"), true);
+            PasteColorButton.Top.Set(146f, 0f);
+            PasteColorButton.Left.Set(660f, 0f);
+            PasteColorButton.OnMouseDown += (a, b) =>
+            {
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                Color rgb;
+                if (!this.GetHexColor(((IClipboard)Platform.Get<IClipboard>()).Value, out rgb))
+                    return;
+                Vector3 hsl = Main.rgbToHsl(rgb);
+                Color_Hue = hsl.X;
+                Color_Saturation = hsl.Y;
+                Color_Luminosity = hsl.Z;
+                Main.player[Main.myPlayer].hairColor = rgb;
+            };
+            HairWindowPanel.Append(PasteColorButton);
+
+            // Randomize Color Button
+            RandomizeColorButton = new UIColoredImageButton((Asset<Texture2D>)Main.Assets.Request<Texture2D>("Images/UI/CharCreation/Randomize"), true);
+            RandomizeColorButton.Top.Set(146f, 0f);
+            RandomizeColorButton.Left.Set(700f, 0f);
+            RandomizeColorButton.OnMouseDown += (a, b) =>
+            {
+                SoundEngine.PlaySound(SoundID.MenuTick);
+                Color rgb = new Color((int)Main.rand.Next(0,256), (int)Main.rand.Next(0, 256), (int)Main.rand.Next(0, 256));
+                Vector3 hsl = Main.rgbToHsl(rgb);
+                Color_Hue = hsl.X;
+                Color_Saturation = hsl.Y;
+                Color_Luminosity = hsl.Z;
+                Main.player[Main.myPlayer].hairColor = rgb;
+            };
+            HairWindowPanel.Append(RandomizeColorButton);
+
+            // HEX Code panel
+            HexCodePanel = new UIPanel();
+            HexCodePanel.Top.Set(146f, 0f);
+            HexCodePanel.Left.Set(740f, 0f);
+            HexCodePanel.Width.Set(92f, 0f);
+            HexCodePanel.Height.Set(32f, 0f);
+            HairWindowPanel.Append(HexCodePanel);
+
+            // HEX Code text
+            HexCodeText = new UIText("#FFFFFF");
+            HexCodeText.Top.Set(154f, 0f);
+            HexCodeText.Left.Set(748f, 0f);
+            HexCodeText.Width.Set(76f, 0f);
+            HexCodeText.Height.Set(24f, 0f);
+            HairWindowPanel.Append(HexCodeText);
+
+            // Price
+            PriceElement = new UIPrice();
+            PriceElement.Top.Set(208f, 0f);
+            PriceElement.Left.Set(646f, 0f);
+            PriceElement.Width.Set(178f, 0f);
+            PriceElement.Height.Set(84f, 0f);
+            HairWindowPanel.Append(PriceElement);
 
             // Buy Text
             BuyText = new UIText("Buy", 1.25f, false);
-            BuyText.Top.Set(250f, 0f);
+            BuyText.Top.Set(256f, 0f);
             BuyText.Left.Set(630f, 0f);
             BuyText.OnMouseOver += (a, b) => 
             {
@@ -177,7 +275,7 @@ namespace HairLoader.UI
 
             // Cancel Text
             CancelText = new UIText("Cancel", 1.25f, false);
-            CancelText.Top.Set(250f, 0f);
+            CancelText.Top.Set(256f, 0f);
             CancelText.Left.Set(750f, 0f);
             CancelText.OnMouseOver += (a, b) => 
             { 
@@ -192,14 +290,6 @@ namespace HairLoader.UI
             };
             CancelText.OnClick += (a, b) => { CloseHairWindow(); };
             HairWindowPanel.Append(CancelText);
-
-            // Price
-            PriceElement = new UIPrice();
-            PriceElement.Top.Set(164f, 0f);
-            PriceElement.Left.Set(640f, 0f);
-            PriceElement.Width.Set(178f, 0f);
-            PriceElement.Height.Set(84f, 0f);
-            HairWindowPanel.Append(PriceElement);
 
             Append(HairWindowPanel);
         }
@@ -222,6 +312,35 @@ namespace HairLoader.UI
             {
                 Main.LocalPlayer.mouseInterface = true;
             }
+
+            UpdateHexText(Main.hslToRgb(new Vector3(HairWindow.Color_Hue, HairWindow.Color_Saturation, HairWindow.Color_Luminosity)));
+        }
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            highlightText = null;
+
+            base.Draw(spriteBatch);
+
+            if (CopyColorButton.IsMouseHovering)
+                highlightText = Language.GetTextValue("UI.CopyColorToClipboard");
+
+            if (PasteColorButton.IsMouseHovering)
+                highlightText = Language.GetTextValue("UI.PasteColorFromClipboard");
+
+            if (RandomizeColorButton.IsMouseHovering)
+                highlightText = Language.GetTextValue("UI.RandomizeColor");
+
+            if (highlightText != null)
+            {
+                float x = (float)FontAssets.MouseText.Value.MeasureString(highlightText).X;
+                Vector2 vector2 = new Vector2((float)Main.mouseX, (float)Main.mouseY) + new Vector2(16f);
+                if (vector2.Y > (double)(Main.screenHeight - 30))
+                    vector2.Y = (float)(double)(Main.screenHeight - 30);
+                if (vector2.X > (double)Main.screenWidth - (double)x)
+                    vector2.X = (float)(double)(Main.screenWidth - 460);
+                Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.MouseText.Value, highlightText, (float)vector2.X, (float)vector2.Y, new Color((int)Main.mouseTextColor, (int)Main.mouseTextColor, (int)Main.mouseTextColor, (int)Main.mouseTextColor), Color.Black, Vector2.Zero);
+            }
         }
 
         internal void OpenHairWindow()
@@ -237,6 +356,7 @@ namespace HairLoader.UI
             Color_Hue = hsl.X;
             Color_Saturation = hsl.Y;
             Color_Luminosity = hsl.Z;
+            UpdateHexText(OldHairColor);
 
             Main.playerInventory = false;
             Main.npcChatText = "";
@@ -482,6 +602,26 @@ namespace HairLoader.UI
             HairGrid.UpdateOrder();
             HairGrid._innerList.Recalculate();
         }
+        public void UpdateHexText(Color pendingColor) => HexCodeText.SetText(GetHexText(pendingColor));
+
+        private static string GetHexText(Color pendingColor) => "#" + pendingColor.Hex3().ToUpper();
+
+        private bool GetHexColor(string hexString, out Color rgb)
+        {
+            if (hexString.StartsWith("#"))
+                hexString = hexString.Substring(1);
+            uint result;
+            if (hexString.Length <= 6 && uint.TryParse(hexString, NumberStyles.HexNumber, (IFormatProvider)CultureInfo.CurrentCulture, out result))
+            {
+                uint num1 = result & (uint)byte.MaxValue;
+                uint num2 = result >> 8 & (uint)byte.MaxValue;
+                uint num3 = result >> 16 & (uint)byte.MaxValue;
+                rgb = new Color((int)num3, (int)num2, (int)num1);
+                return true;
+            }
+            rgb = new Color(0, 0, 0);
+            return false;
+        }
     }
 
     internal class ModSlot : UITextPanel<string>
@@ -545,6 +685,7 @@ namespace HairLoader.UI
             if (hovered)
             {
                 spriteBatch.Draw(hoverTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(hoverTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                HairWindow.highlightText = this.hairEntryName;
             }
 
             spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
