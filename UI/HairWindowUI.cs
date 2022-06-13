@@ -439,7 +439,7 @@ namespace HairLoader.UI
                     int itemCount = 0;
                     int price = 0;
 
-                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName && Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
+                    if ((Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName != OldModName || Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName != OldHairName))
                     {
                         price += HairLoader.HairTable[selectMod][selectHair].hairPrice;
                     }
