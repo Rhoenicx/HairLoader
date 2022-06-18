@@ -30,6 +30,7 @@ namespace HairLoader
         public bool CharacterCreator { get; set; }      // Whether this hairstyle is available at the character creator
         public bool UnlockCondition { get; set; }       // Whether this hairstyle must be unlocked to appear in the Stylist's hairwindow
         public bool HairWindowVisible { get; set; }
+        public string UnlockHint { get; set; }          // Hint for the player how to unlock this hairstyle
     }
 
     class HairLoader : Mod
@@ -88,7 +89,7 @@ namespace HairLoader
                     "RegisterHairStyle",                                                // The mod call name to add a new hairstyle
                     "HairLoader",                                                       // Enter the name of your mod's class
                     "Hair Loader",                                                      // The name of your mod that will be displayed in the Stylist's Hair UI
-                    "Example_1",                                                        // The name of your hairstyle - each hairstyle needs an unique name. (May be displayed in the future so choose wisely!)
+                    "Example 1",                                                        // The name of your hairstyle - each hairstyle needs an unique name. (May be displayed in the future so choose wisely!)
                     Assets.Request<Texture2D>("HairStyles/HairLoader/Example_1"),       // Load the hair texture as an asset (Remember to keep the texture the same height as vanilla hairstyles)
                     Assets.Request<Texture2D>("HairStyles/HairLoader/ExampleAlt_1"),    // Load the hair alt texture as an asset
                     0f,                                                                 // X offset of the hairstyle, use this when your texture's width is larger than default
@@ -96,8 +97,8 @@ namespace HairLoader
                     5,                                                                  // The price to buy this hairstyle
                     1,                                                                  // The price to re-color this hairstyle
                     false,                                                              // Available in the character creator menu?
-                    true                                                                // Has an custom unlock condition? Yes => add a mod call to your own mod, for the example see line 149
-                    );
+                    true,                                                               // Has an custom unlock condition? Yes => add a mod call to your own mod, for the example see line 151
+                    "Unlocked by defeating the Eye of Cthulhu");                        // Hint for players how to unlock this hairstyle, can be left out and/or can also be null to display nothing
                 }
             }
         }
@@ -139,7 +140,8 @@ namespace HairLoader
                         Convert.ToInt32(args[8]), // hair price
                         Convert.ToInt32(args[9]), // color price
                         args[10] as bool?, // Character Creation
-                        args[11] as bool? // Unlock Condition
+                        args[11] as bool?, // Unlock Condition
+                        args[12] as string // Unlock Hint
                     );
 
                     return "Success";
@@ -151,7 +153,7 @@ namespace HairLoader
                     // Create a switch with a case for every hairstyle added, enter the same name of the hairstyle you used to add them
                     switch (args[1] as string)
                     {
-                        case "Example_1":
+                        case "Example 1":
                             {
                                 // Write your unlock condition here, return it as a bool
                                 // This Exmaple Hairstyle is unlocked when the Eye of Cthulhu has been defeated
@@ -244,6 +246,7 @@ namespace HairLoader
             for (int i = 0; i < Main.maxHairStyles; i++)
             {
                 Main.instance.LoadHair(i);
+                Main.Hairstyles.UpdateUnlocks();
                 bool visible = Main.Hairstyles.AvailableHairstyles.Contains(i);
 
                 if (!HairTable.ContainsKey("Vanilla"))
@@ -262,11 +265,12 @@ namespace HairLoader
                             hairOffset = Main.player[Main.myPlayer].GetHairDrawOffset(i, false).X,
                             index = i,
                             currency = -1,
-                            hairPrice = i <= 51 ? 10000 : 50000,
-                            colorPrice = 10000,
+                            hairPrice = i <= 51 ? 20000 : 200000,
+                            colorPrice = 20000,
                             CharacterCreator = visible,
                             UnlockCondition = false,
-                            HairWindowVisible = true
+                            HairWindowVisible = true,
+                            UnlockHint = GetVanillaUnlockHint(i)
                         }
                     );
                 }
@@ -278,11 +282,12 @@ namespace HairLoader
                         hairOffset = Main.player[Main.myPlayer].GetHairDrawOffset(i, false).X,
                         index = i, 
                         currency = -1, 
-                        hairPrice = i <= 51 ? 10000 : 50000, 
-                        colorPrice = 10000,
+                        hairPrice = i <= 51 ? 20000 : 200000, 
+                        colorPrice = 20000,
                         CharacterCreator = visible,
                         UnlockCondition = false,
-                        HairWindowVisible = true
+                        HairWindowVisible = true,
+                        UnlockHint = GetVanillaUnlockHint(i)
                     };
                 }
 
@@ -293,6 +298,37 @@ namespace HairLoader
             }
 
             CalculateCharacterCreatorHairCount();
+        }
+
+        public static string GetVanillaUnlockHint(int index)
+        {
+            switch (index)
+            { 
+                case > 0 and <= 50:
+                    {
+                        return "Available everywhere";
+                    }
+                case > 50 and <= 122 or 134 or 135 or 145 or 146 or 152 or 153 or 156 or 159 or 160 or 163 or 164:
+                    {
+                        return "Available at the stylist";
+                    }
+                case 162:
+                    {
+                        return "Unlocked by defeating Plantera";
+                    }
+                case > 122 and <= 132:
+                    {
+                        return "Unlocked by defeating the Martian invasion";
+                    }
+                case 133:
+                    {
+                        return "Unlocked by defeating the Martian invasion and the Moon Lord";
+                    }
+                default:
+                    {
+                        return null;
+                    }
+            }
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
@@ -311,7 +347,7 @@ namespace HairLoader
         }
 
         //-----------------------------------------------------------------------------------------------------------------------------
-        public static void RegisterCustomHair(string modClassName, string modDisplayName, string hairEntryName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition )
+        public static void RegisterCustomHair(string modClassName, string modDisplayName, string hairEntryName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition , string UnlockHint = null)
         {
             if (modClassName == "Vanilla" || modClassName == "All")
             {
@@ -330,17 +366,19 @@ namespace HairLoader
 
             if (!HairTable[modClassName].ContainsKey(hairEntryName))
             {
-                HairTable[modClassName].Add(hairEntryName, new PlayerHairEntry { 
-                    hair = hair, 
+                HairTable[modClassName].Add(hairEntryName, new PlayerHairEntry
+                {
+                    hair = hair,
                     hairAlt = hairAlt,
                     hairOffset = hairOffset,
-                    index = -1, 
-                    currency = currency, 
-                    hairPrice = hairPrice, 
+                    index = -1,
+                    currency = currency,
+                    hairPrice = hairPrice,
                     colorPrice = colorPrice,
                     CharacterCreator = CharacterCreator.HasValue ? CharacterCreator.Value : false,
                     UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false,
-                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false
+                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false,
+                    UnlockHint = UnlockHint
                 });
 
                 if (CharacterCreator == true)
@@ -360,7 +398,8 @@ namespace HairLoader
                     colorPrice = colorPrice,
                     CharacterCreator = CharacterCreator.HasValue ? CharacterCreator.Value : false,
                     UnlockCondition = UnlockCondition.HasValue ? UnlockCondition.Value : false,
-                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false
+                    HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false,
+                    UnlockHint = UnlockHint
                 };
             }
         }
