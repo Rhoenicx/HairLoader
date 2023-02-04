@@ -15,6 +15,7 @@ Current features:
 - Currently requires spritesheets to be same height as vanilla's.
 
 Github: https://github.com/Rhoenicx/HairLoader
+
 Steam Workshop:	https://steamcommunity.com/sharedfiles/filedetails/?id=2819428494
 
 Please leave your suggestions, bugs and other notices in the Steam Workshop comments.
