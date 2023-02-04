@@ -1126,6 +1126,10 @@ namespace HairLoader.UI
             else
             {
                 // Price is a custom currency
+
+                // Load the texture of the currency item
+                Main.instance.LoadItem(HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency);
+
                 // Search for the chosen item's texture in the TextureAssets.Item array
                 Texture2D texture = TextureAssets.Item[HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency].Value;
 

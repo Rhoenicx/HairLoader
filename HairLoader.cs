@@ -19,6 +19,7 @@ using HairLoader.UI;
 using static Terraria.ModLoader.ModContent;
 using Steamworks;
 using log4net.Repository.Hierarchy;
+using IL.Terraria.GameContent.UI.States;
 
 namespace HairLoader
 {    
@@ -57,17 +58,13 @@ namespace HairLoader
         {
             IL.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_01_BackHair += HookBackHair;
             IL.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_21_Head += HookHead;
+            IL.Terraria.GameContent.UI.States.UICharacterCreation.MakeHairsylesMenu += HookUICharacterCreation_MakeHairsylesMenu;
 
             // Code not ran on server
             if (!Terraria.Main.dedServ)
             {
                 HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
                 ModDisplayNames = new Dictionary<string, string>();
-
-                // Define a detour on MakeHairStylesMenu in the vanilla code. This detour does NOT call orig!
-                //On.Terraria.GameContent.UI.States.UICharacterCreation.MakeHairsylesMenu += UICharacterCreation_MakeHairsylesMenuON;
-                //On.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_01_BackHair += PlayerDrawLayers_DrawPlayer_01_BackHair;
-                //On.Terraria.DataStructures.PlayerDrawLayers.DrawPlayer_21_Head += PlayerDrawLayers_DrawPlayer_21_Head;
 
                 // Load UI textures
                 Main.instance.LoadItem(ItemID.PlatinumCoin);
@@ -82,6 +79,11 @@ namespace HairLoader
                 LoadVanillaHair();             
             }
             base.Load();
+        }
+
+        private void UICharacterCreation_MakeHairsylesMenu(ILContext il)
+        {
+            throw new NotImplementedException();
         }
 
         public override void PostSetupContent()
@@ -244,8 +246,6 @@ namespace HairLoader
             }
         }
 
-
-        //-----------------------------------------------------------------------------------------------------------------------------
         public void LoadVanillaHair()
         {
             Main.Hairstyles.UpdateUnlocks();
@@ -338,7 +338,6 @@ namespace HairLoader
             }
         }
 
-        //-----------------------------------------------------------------------------------------------------------------------------
         public static void CalculateCharacterCreatorHairCount()
         {
             foreach (KeyValuePair<string, Dictionary<string, PlayerHairEntry>> mod in HairTable)
@@ -353,7 +352,6 @@ namespace HairLoader
             }
         }
 
-        //-----------------------------------------------------------------------------------------------------------------------------
         public static void RegisterCustomHair(string modClassName, string modDisplayName, string hairEntryName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition , string UnlockHint = null)
         {
             if (modClassName == "Vanilla" || modClassName == "All")
@@ -419,7 +417,6 @@ namespace HairLoader
             }
         }
 
-        //-----------------------------------------------------------------------------------------------------------------------------
         public void ChangePlayerHairStyle (string modClassName, string hairEntryName, int PlayerID)
         {
             if (!HairTable.ContainsKey(modClassName) || !HairTable[modClassName].ContainsKey(hairEntryName))
@@ -472,81 +469,14 @@ namespace HairLoader
         
         public static DrawData EditHairTexture(Player player, DrawData drawData)
         {
-            ModContent.GetInstance<HairLoader>().Logger.Debug(player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName);
-            ModContent.GetInstance<HairLoader>().Logger.Debug(player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName);
-
             drawData.texture = HairTable[player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName][player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName].hair.Value;
             return drawData;
         }
 
         public static DrawData EditHairAltTexture(Player player, DrawData drawData)
         {
-            ModContent.GetInstance<HairLoader>().Logger.Debug(player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName);
-            ModContent.GetInstance<HairLoader>().Logger.Debug(player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName);
-
             drawData.texture = HairTable[player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName][player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName].hairAlt.Value;
             return drawData;
-        }
-
-        //----------------------------------------------------------------------------------------------------------------------------
-        //-----------------------------------------------------  HACKS  --------------------------------------------------------------
-        //----------------------------------------------------------------------------------------------------------------------------
-        private void UICharacterCreation_MakeHairsylesMenuON(On.Terraria.GameContent.UI.States.UICharacterCreation.orig_MakeHairsylesMenu orig, Terraria.GameContent.UI.States.UICharacterCreation self, UIElement middleInnerPanel)
-        {
-            Main.Hairstyles.UpdateUnlocks();
-            UIElement element = new UIElement()
-            {
-                Width = StyleDimension.FromPixelsAndPercent(-10f, 1f),
-                Height = StyleDimension.FromPixelsAndPercent(0.0f, 1f),
-                HAlign = 0.5f,
-                VAlign = 0.5f,
-                Top = StyleDimension.FromPixels(6f)
-            };
-            middleInnerPanel.Append(element);
-            element.SetPadding(0.0f);
-            UIList uiList1 = new UIList();
-            uiList1.Width = StyleDimension.FromPixelsAndPercent(-18f, 1f);
-            uiList1.Height = StyleDimension.FromPixelsAndPercent(-6f, 1f);
-            UIList uiList2 = uiList1;
-            uiList2.SetPadding(4f);
-            element.Append((UIElement)uiList2);
-            UIScrollbar uiScrollbar = new UIScrollbar();
-            uiScrollbar.HAlign = 1f;
-            uiScrollbar.Height = StyleDimension.FromPixelsAndPercent(-30f, 1f);
-            uiScrollbar.Top = StyleDimension.FromPixels(10f);
-            UIScrollbar scrollbar = uiScrollbar;
-            scrollbar.SetView(100f, 1000f);
-            uiList2.SetScrollbar(scrollbar);
-            element.Append((UIElement)scrollbar);
-            int count = Terraria.Main.Hairstyles.AvailableHairstyles.Count;
-            UIElement uiElement = new UIElement()
-            {
-                Width = StyleDimension.FromPixelsAndPercent(0.0f, 1f),
-                Height = StyleDimension.FromPixelsAndPercent((float)(48 * (CharacterCreatorHairCount / 10 + (CharacterCreatorHairCount % 10 != 0 ? 1 : 0))), 0.0f)
-            };
-            uiList2.Add(uiElement);
-            uiElement.SetPadding(0.0f);
-            int index = 0;
-            foreach (KeyValuePair<string, Dictionary<string, PlayerHairEntry>> mod in HairTable)
-            {
-                foreach (KeyValuePair<string, PlayerHairEntry> hair in mod.Value)
-                {
-                    if (hair.Value.CharacterCreator)
-                    {
-                        UICustomHairStyleButton uiHairStyleButton1 = new UICustomHairStyleButton(Main.PendingPlayer, mod.Key, hair.Key);
-                        uiHairStyleButton1.Left = StyleDimension.FromPixels((float)((double)(index % 10) * 46.0 + 6.0));
-                        uiHairStyleButton1.Top = StyleDimension.FromPixels((float)((double)(index / 10) * 48.0 + 1.0));
-                        UICustomHairStyleButton uiHairStyleButton2 = uiHairStyleButton1;
-                        uiHairStyleButton2.SetSnapPoint("Middle", index);
-                        uiElement.Append((UIElement)uiHairStyleButton2);
-                        index++;
-                    }
-                }
-            }
-
-            // Set the private variable _hairstylesContainer
-            FieldInfo fi = typeof(Terraria.GameContent.UI.States.UICharacterCreation).GetField("_hairstylesContainer", BindingFlags.NonPublic | BindingFlags.Instance);
-            fi.SetValue(self, element);
         }
 
         //----------------------------------------------------------------------------------------------------------------------------
@@ -674,6 +604,8 @@ namespace HairLoader
             // Create a new cursor and label
             var c1 = new ILCursor(il);
             ILLabel label = null;
+
+            Logger.Debug(il.ToString());
 
             // First edit
             if (c1.TryGotoNext(
@@ -834,19 +766,13 @@ namespace HairLoader
                     x => x.MatchCall(out _)
                     ))
                 {
-                    // Increase the cursor's index with 23
                     c1.Index += 23;
-                    // Put the player instance on the stack
                     c1.Emit(OpCodes.Ldarg_0);
                     c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                    // Put local 1 (drawData) onto the stack
                     c1.Emit(OpCodes.Ldloc, 6);
-                    // Create delegate                                   
                     c1.EmitDelegate(EditHairTexture);
-                    // Store the modified DrawData into the local 1
                     c1.Emit(OpCodes.Stloc, 6);
-
-                    Logger.Debug("Head-3");
+                    //Logger.Debug("Head-3");
                 }
             }
 
@@ -886,20 +812,181 @@ namespace HairLoader
                     x => x.MatchCall(out _)
                     ))
                 {
-                    // Increase the cursor's index with 23
                     c1.Index += 23;
-                    // Put the player instance on the stack
                     c1.Emit(OpCodes.Ldarg_0);
                     c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                    // Put local 1 (drawData) onto the stack
-                    c1.Emit(OpCodes.Ldloc, 6);
-                    // Create delegate                                   
+                    c1.Emit(OpCodes.Ldloc, 6);                                
                     c1.EmitDelegate(EditHairTexture);
-                    // Store the modified DrawData into the local 1
                     c1.Emit(OpCodes.Stloc, 6);
-
-                    Logger.Debug("Head-4");
+                    //Logger.Debug("Head-4");
                 }
+            }
+
+            // Fifth edit
+            if (c1.TryGotoNext(
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                x => x.MatchLdfld<Player>("invis"),
+                x => x.MatchBrtrue(out label),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                x => x.MatchLdfld<Player>("face"),
+                x => x.MatchLdcI4(0),
+                x => x.MatchBlt(out label),
+                x => x.MatchLdsfld(typeof(Terraria.ID.ArmorIDs.Face.Sets), "PreventHairDraw"),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                x => x.MatchLdfld<Player>("face"),
+                x => x.MatchLdelemU1(),
+                x => x.MatchBrtrue(out label)
+                ))
+            {
+                c1.Index += 15;
+
+                if (c1.TryGotoNext(
+                    x => x.MatchLdloca(6),
+                    x => x.MatchLdsfld(typeof(TextureAssets), "PlayerHair"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                    x => x.MatchLdfld<Player>("hair"),
+                    x => x.MatchLdelemRef(),
+                    x => x.MatchCallvirt("ReLogic.Content.Asset`1<Microsoft.Xna.Framework.Graphics.Texture2D>", "get_Value"),
+                    x => x.MatchLdloc(5),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("hairFrontFrame"),
+                    x => x.MatchNewobj("System.Nullable`1<Microsoft.Xna.Framework.Rectangle>"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("colorHair"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                    x => x.MatchLdfld<Player>("headRotation"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("headVect"),
+                    x => x.MatchLdcR4(1),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("playerEffect"),
+                    x => x.MatchLdcI4(0),
+                    x => x.MatchCall(out _)
+                    ))
+                {
+                    c1.Index += 23;
+                    c1.Emit(OpCodes.Ldarg_0);
+                    c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
+                    c1.Emit(OpCodes.Ldloc, 6);
+                    c1.EmitDelegate(EditHairTexture);
+                    c1.Emit(OpCodes.Stloc, 6);
+                    //Logger.Debug("Head-5");
+                }
+            }
+        }
+
+        private void HookUICharacterCreation_MakeHairsylesMenu(ILContext il)
+        {
+            // Create a new cursor and label
+            var c1 = new ILCursor(il);
+            ILLabel label = null;
+
+            // First edit
+            if (c1.TryGotoNext(
+                x => x.MatchLdloc(1),
+                x => x.MatchLdloc(4),
+                x => x.MatchCallvirt("Terraria.GameContent.UI.Elements.UIList", "Add"),
+                x => x.MatchLdloc(4),
+                x => x.MatchLdcR4(0),
+                x => x.MatchCallvirt("Terraria.UI.UIElement", "SetPadding")
+                ))
+            {
+                c1.Emit(OpCodes.Ldloc, 4);
+                c1.EmitDelegate<Func<UIElement, UIElement>>((uiElement) => 
+                {
+                    uiElement.Width = StyleDimension.FromPixelsAndPercent(0.0f, 1f);
+                    uiElement.Height = StyleDimension.FromPixelsAndPercent((float)(48 * (CharacterCreatorHairCount / 10 + (CharacterCreatorHairCount % 10 != 0 ? 1 : 0))), 0.0f);
+                    return uiElement; 
+                });
+                c1.Emit(OpCodes.Stloc, 4);
+            }
+
+            // Second edit
+            if (c1.TryGotoNext(
+                x => x.MatchLdcI4(0),
+                x => x.MatchStloc(5),
+                x => x.MatchBr(out label),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<Terraria.GameContent.UI.States.UICharacterCreation>("_player"),
+                x => x.MatchLdsfld(typeof(Main), "Hairstyles"),
+                x => x.MatchLdfld<HairstyleUnlocksHelper>("AvailableHairstyles"),
+                x => x.MatchLdloc(5),
+                x => x.MatchCallvirt("System.Collections.Generic.List`1<System.Int32>", "get_Item"),
+                x => x.MatchNewobj(typeof(UIHairStyleButton)),
+                x => x.MatchDup(),
+                x => x.MatchLdloc(5),
+                x => x.MatchLdcI4(10),
+                x => x.MatchRem(),
+                x => x.MatchConvR4(),
+                x => x.MatchLdcR4(46),
+                x => x.MatchMul(),
+                x => x.MatchLdcR4(6),
+                x => x.MatchAdd(),
+                x => x.MatchCall<StyleDimension>("FromPixels"),
+                x => x.MatchStfld<UIElement>("Left"),
+                x => x.MatchDup(),
+                x => x.MatchLdloc(5),
+                x => x.MatchLdcI4(10),
+                x => x.MatchDiv(),
+                x => x.MatchConvR4(),
+                x => x.MatchLdcR4(48),
+                x => x.MatchMul(),
+                x => x.MatchLdcR4(1),
+                x => x.MatchAdd(),
+                x => x.MatchCall<StyleDimension>("FromPixels"),
+                x => x.MatchStfld<UIElement>("Top"),
+                x => x.MatchStloc(6),
+                x => x.MatchLdloc(6),
+                x => x.MatchLdstr("Middle"),
+                x => x.MatchLdloc(5),
+                x => x.MatchLdloca(7),
+                x => x.MatchInitobj("System.Nullable`1<Microsoft.Xna.Framework.Vector2>"),
+                x => x.MatchLdloc(7),
+                x => x.MatchLdloca(7),
+                x => x.MatchInitobj("System.Nullable`1<Microsoft.Xna.Framework.Vector2>"),
+                x => x.MatchLdloc(7),
+                x => x.MatchCallvirt<UIElement>("SetSnapPoint"),
+                x => x.MatchLdloc(4),
+                x => x.MatchLdloc(6),
+                x => x.MatchCallvirt<UIElement>("Append"),
+                x => x.MatchLdloc(5),
+                x => x.MatchLdcI4(1),
+                x => x.MatchAdd(),
+                x => x.MatchStloc(5),
+                x => x.MatchLdloc(5),
+                x => x.MatchLdloc(3),
+                x => x.MatchBlt(out label)
+                ))
+            {
+                c1.RemoveRange(53);
+                c1.Emit(OpCodes.Ldloc, 4);
+                c1.EmitDelegate<Func<UIElement, UIElement>>((uiElement) =>
+                {
+                    int index = 0;
+                    foreach (KeyValuePair<string, Dictionary<string, PlayerHairEntry>> mod in HairTable)
+                    {
+                        foreach (KeyValuePair<string, PlayerHairEntry> hair in mod.Value)
+                        {
+                            if (hair.Value.CharacterCreator)
+                            {
+                                UICustomHairStyleButton uiHairStyleButton1 = new UICustomHairStyleButton(Main.PendingPlayer, mod.Key, hair.Key);
+                                uiHairStyleButton1.Left = StyleDimension.FromPixels((float)((double)(index % 10) * 46.0 + 6.0));
+                                uiHairStyleButton1.Top = StyleDimension.FromPixels((float)((double)(index / 10) * 48.0 + 1.0));
+                                UICustomHairStyleButton uiHairStyleButton2 = uiHairStyleButton1;
+                                uiHairStyleButton2.SetSnapPoint("Middle", index);
+                                uiElement.Append((UIElement)uiHairStyleButton2);
+                                index++;
+                            }
+                        }
+                    }
+                    return uiElement;
+                });
+                c1.Emit(OpCodes.Stloc, 4);
             }
         }
     }
