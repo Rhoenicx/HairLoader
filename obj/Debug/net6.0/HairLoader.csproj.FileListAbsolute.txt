@@ -1,5 +1,0 @@
-G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net6.0\HairLoader.csproj.AssemblyReference.cache
-G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net6.0\HairLoader.GeneratedMSBuildEditorConfig.editorconfig
-G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net6.0\HairLoader.AssemblyInfoInputs.cache
-G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net6.0\HairLoader.AssemblyInfo.cs
-G:\Dropbox\personal\Terraria\Mods\HairLoader\obj\Debug\net6.0\HairLoader.csproj.CoreCompileInputs.cache
