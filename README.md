@@ -22,10 +22,10 @@ Please leave your suggestions, bugs and other notices in the Steam Workshop comm
 
 
 Changelog:
-0.2.0.0 - Now using IL patches instead of detours.
-0.1.0.5 - Added extra button to show locked hairstyles.
-0.1.0.4 - Fixed an issue with changing hairstyles.
-0.1.0.3 - Added color copy/paste/randomize buttons and HEX code display.
-0.1.0.2 - Fixed an issue with displaying highlight text.
-0.1.0.1 - Reworked mod calls and added example code.
-0.1.0.0 - Initial release.
+- 0.2.0.0 : Now using IL patches instead of detours.
+- 0.1.0.5 : Added extra button to show locked hairstyles.
+- 0.1.0.4 : Fixed an issue with changing hairstyles.
+- 0.1.0.3 : Added color copy/paste/randomize buttons and HEX code display.
+- 0.1.0.2 : Fixed an issue with displaying highlight text.
+- 0.1.0.1 : Reworked mod calls and added example code.
+- 0.1.0.0 : Initial release.
