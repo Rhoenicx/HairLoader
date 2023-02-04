@@ -383,7 +383,7 @@ namespace HairLoader.UI
             if (!HairLoader.HairTable.ContainsKey(OldModName) || !HairLoader.HairTable[OldModName].ContainsKey(OldHairName))
             {
                 // Hairstyle does not exist => search for the modname and hairname of the last vanilla hairstyle
-                if (HairLoader.getModAndHairNames(ref OldModName, ref OldHairName, Main.player[Main.myPlayer].hair))
+                if (HairLoader.GetModAndHairNames(ref OldModName, ref OldHairName, Main.player[Main.myPlayer].hair))
                 {
                     // apply vanilla hairstyles to HairLoader's variables
                     Main.player[Main.myPlayer].GetModPlayer<HairLoaderPlayer>().Hair_modClassName = OldModName;

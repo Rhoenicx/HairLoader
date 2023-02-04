@@ -1,8 +1,8 @@
+using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
-using Terraria.GameContent;
 using HairLoader.UI;
 using Terraria.DataStructures;
 
@@ -53,6 +53,37 @@ namespace HairLoader
             {
                 HairLoader.Instance.ChangePlayerHairStyle(player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName, player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName, player.whoAmI);
             }
+        }
+
+        public override void ModifyDrawInfo(ref PlayerDrawSet drawInfo)
+        {
+            string modClassName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modClassName;
+            string hairEntryName = drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName;
+
+            bool valid = true;
+            if (!HairLoader.HairTable.ContainsKey(modClassName))
+            {
+                valid = false;
+            }
+            else if (!HairLoader.HairTable[modClassName].ContainsKey(hairEntryName))
+            {
+                valid = false;
+            }
+
+            if (!valid)
+            {
+                if (HairLoader.GetModAndHairNames(ref modClassName, ref hairEntryName, drawInfo.drawPlayer.hair))
+                {
+                    drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_modClassName = modClassName;
+                    drawInfo.drawPlayer.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = hairEntryName;
+                }
+                else
+                {
+                    return;
+                }
+            }
+
+            drawInfo.hairOffset = new Vector2(drawInfo.drawPlayer.direction == 1 ? HairLoader.HairTable[modClassName][hairEntryName].hairOffset : -HairLoader.HairTable[modClassName][hairEntryName].hairOffset, 0f);
         }
     }
 }
