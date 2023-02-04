@@ -1,0 +1,8 @@
+.idea/*
+.vs/*
+bin/*
+obj/*
+*.sln*
+*.aux
+*.log
+*.synctex.gz
