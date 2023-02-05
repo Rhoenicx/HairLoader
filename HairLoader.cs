@@ -491,61 +491,57 @@ namespace HairLoader
 
             // First edit
             if (c1.TryGotoNext(
-                x => x.MatchLdarg(0),                                                                                           
-                x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),                                                                 
-                x => x.MatchLdfld<Player>("head"),                                                                              
-                x => x.MatchLdcI4(-1),                                                                                          
-                x => x.MatchBeq(out label),                                                                                     
-                x => x.MatchLdarg(0),                                                                                           
-                x => x.MatchLdfld<PlayerDrawSet>("fullHair"),                                                                   
-                x => x.MatchBrtrue(out label),                                                                                  
-                x => x.MatchLdarg(0),                                                                                           
-                x => x.MatchLdfld<PlayerDrawSet>("drawsBackHairWithoutHeadgear"),                                               
-                x => x.MatchBrfalse(out label)))                                                                                
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                x => x.MatchLdfld<Player>("head"),
+                x => x.MatchLdcI4(-1),
+                x => x.MatchBeq(out label),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("fullHair"),
+                x => x.MatchBrtrue(out label),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld<PlayerDrawSet>("drawsBackHairWithoutHeadgear"),
+                x => x.MatchBrfalse(out label)))
             {
                 c1.Index += 11;
 
                 if (c1.TryGotoNext(
-                    x => x.MatchLdloca(1),                                                                                      
-                    x => x.MatchLdsfld(typeof(TextureAssets), "PlayerHair"),                                                    
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),                                                             
-                    x => x.MatchLdfld<Player>("hair"),                                                                          
-                    x => x.MatchLdelemRef(),                                                                                    
-                    x => x.MatchCallvirt("ReLogic.Content.Asset`1<Microsoft.Xna.Framework.Graphics.Texture2D>", "get_Value"),   
-                    x => x.MatchLdloc(0),                                                                                       
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("hairBackFrame"),                                                          
-                    x => x.MatchNewobj("System.Nullable`1<Microsoft.Xna.Framework.Rectangle>"),                                 
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("colorHair"),                                                              
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),                                                             
-                    x => x.MatchLdfld<Player>("headRotation"),                                                                  
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("headVect"),                                                               
-                    x => x.MatchLdcR4(1),                                                                                       
-                    x => x.MatchLdarg(0),                                                                                       
-                    x => x.MatchLdfld<PlayerDrawSet>("playerEffect"),                                                           
-                    x => x.MatchLdcI4(0),                                                                                       
-                    x => x.MatchCall(out _)                                                                                     
+                    x => x.MatchLdloca(1),
+                    x => x.MatchLdsfld(typeof(TextureAssets), "PlayerHair"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                    x => x.MatchLdfld<Player>("hair"),
+                    x => x.MatchLdelemRef(),
+                    x => x.MatchCallvirt("ReLogic.Content.Asset`1<Microsoft.Xna.Framework.Graphics.Texture2D>", "get_Value"),
+                    x => x.MatchLdloc(0),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("hairBackFrame"),
+                    x => x.MatchNewobj("System.Nullable`1<Microsoft.Xna.Framework.Rectangle>"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("colorHair"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("drawPlayer"),
+                    x => x.MatchLdfld<Player>("headRotation"),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("headVect"),
+                    x => x.MatchLdcR4(1),
+                    x => x.MatchLdarg(0),
+                    x => x.MatchLdfld<PlayerDrawSet>("playerEffect"),
+                    x => x.MatchLdcI4(0),
+                    x => x.MatchCall(out _)
                     ))
                 {
-                    // Increase the cursor's index with 23
                     c1.Index += 23;
-                    // Put the player instance on the stack
                     c1.Emit(OpCodes.Ldarg_0);
                     c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                    // Put local 1 (drawData) onto the stack
                     c1.Emit(OpCodes.Ldloc_1);
-                    // Create delegate                                   
                     c1.EmitDelegate(EditHairTexture);
-                    // Store the modified DrawData into the local 1
                     c1.Emit(OpCodes.Stloc_1);
-
-                    Logger.Debug("BackHair-1");
+                    Logger.Debug("Successfully implemented IL Patch #1 in BackHair");
                 }
+                else { Logger.Debug("IL Patch #1 in BackHair failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #1 in BackHair failed at search #1"); }
 
             // Second edit
             if (c1.TryGotoNext(
@@ -582,21 +578,17 @@ namespace HairLoader
                     x => x.MatchCall(out _)
                 ))
                 {
-                    // Increase the cursor's index with 23
                     c1.Index += 23;
-                    // Put the player instance on the stack
                     c1.Emit(OpCodes.Ldarg_0);
                     c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                    // Put local 1 (drawData) onto the stack
                     c1.Emit(OpCodes.Ldloc_1);
-                    // Create delegate                                   
                     c1.EmitDelegate(EditHairAltTexture);
-                    // Store the modified DrawData into the local 1
                     c1.Emit(OpCodes.Stloc_1);
-
-                    Logger.Debug("BackHair-2");
+                    Logger.Debug("Successfully implemented IL Patch #2 in BackHair");
                 }
+                else { Logger.Debug("IL Patch #2 in BackHair failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #2 in BackHair failed at search #1"); }
         }
 
         private void HookHead(ILContext il)
@@ -604,8 +596,6 @@ namespace HairLoader
             // Create a new cursor and label
             var c1 = new ILCursor(il);
             ILLabel label = null;
-
-            Logger.Debug(il.ToString());
 
             // First edit
             if (c1.TryGotoNext(
@@ -624,8 +614,6 @@ namespace HairLoader
                     ))
                 {
                     c1.Index += 4;
-
-                    //Logger.Debug(il.ToString());
 
                     if (c1.TryGotoNext(
                         x => x.MatchLdloca(6),
@@ -653,22 +641,19 @@ namespace HairLoader
                         x => x.MatchCall(out _)
                         ))
                     {
-                        // Increase the cursor's index with 23
                         c1.Index += 23;
-                        // Put the player instance on the stack
                         c1.Emit(OpCodes.Ldarg_0);
                         c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                        // Put local 1 (drawData) onto the stack
-                        c1.Emit(OpCodes.Ldloc, 6);
-                        // Create delegate                                   
+                        c1.Emit(OpCodes.Ldloc, 6);                                 
                         c1.EmitDelegate(EditHairTexture);
-                        // Store the modified DrawData into the local 1
                         c1.Emit(OpCodes.Stloc, 6);
-
-                        Logger.Debug("Head-1");
+                        Logger.Debug("Successfully implemented IL Patch #1 in Head");
                     }
+                    else { Logger.Debug("IL Patch #1 in Head failed at search #3"); }
                 }
+                else { Logger.Debug("IL Patch #1 in Head failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #1 in Head failed at search #1"); }
 
             //Second edit
             if (c1.TryGotoNext(
@@ -709,21 +694,17 @@ namespace HairLoader
                         x => x.MatchCall(out _)
                     ))
                 {
-                    // Increase the cursor's index with 23
                     c1.Index += 23;
-                    // Put the player instance on the stack
                     c1.Emit(OpCodes.Ldarg_0);
                     c1.Emit(OpCodes.Ldfld, typeof(PlayerDrawSet).GetField("drawPlayer"));
-                    // Put local 1 (drawData) onto the stack
-                    c1.Emit(OpCodes.Ldloc, 6);
-                    // Create delegate                                   
+                    c1.Emit(OpCodes.Ldloc, 6);                                 
                     c1.EmitDelegate(EditHairAltTexture);
-                    // Store the modified DrawData into the local 1
                     c1.Emit(OpCodes.Stloc, 6);
-
-                    Logger.Debug("Head-2");
+                    Logger.Debug("Successfully implemented IL Patch #2 in Head");
                 }
+                else { Logger.Debug("IL Patch #2 in Head failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #2 in Head failed at search #1"); }
 
             // Third edit
             if (c1.TryGotoNext(
@@ -772,9 +753,11 @@ namespace HairLoader
                     c1.Emit(OpCodes.Ldloc, 6);
                     c1.EmitDelegate(EditHairTexture);
                     c1.Emit(OpCodes.Stloc, 6);
-                    //Logger.Debug("Head-3");
+                    Logger.Debug("Successfully implemented IL Patch #3 in Head");
                 }
+                else { Logger.Debug("IL Patch #3 in Head failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #3 in Head failed at search #1"); }
 
             // Fourth edit
             if (c1.TryGotoNext(
@@ -818,9 +801,11 @@ namespace HairLoader
                     c1.Emit(OpCodes.Ldloc, 6);                                
                     c1.EmitDelegate(EditHairTexture);
                     c1.Emit(OpCodes.Stloc, 6);
-                    //Logger.Debug("Head-4");
+                    Logger.Debug("Successfully implemented IL Patch #4 in Head");
                 }
+                else { Logger.Debug("IL Patch #4 in Head failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #4 in Head failed at search #1"); }
 
             // Fifth edit
             if (c1.TryGotoNext(
@@ -875,9 +860,11 @@ namespace HairLoader
                     c1.Emit(OpCodes.Ldloc, 6);
                     c1.EmitDelegate(EditHairTexture);
                     c1.Emit(OpCodes.Stloc, 6);
-                    //Logger.Debug("Head-5");
+                    Logger.Debug("Successfully implemented IL Patch #5 in Head");
                 }
+                else { Logger.Debug("IL Patch #5 in Head failed at search #2"); }
             }
+            else { Logger.Debug("IL Patch #5 in Head failed at search #1"); }
         }
 
         private void HookUICharacterCreation_MakeHairsylesMenu(ILContext il)
@@ -897,14 +884,17 @@ namespace HairLoader
                 ))
             {
                 c1.Emit(OpCodes.Ldloc, 4);
-                c1.EmitDelegate<Func<UIElement, UIElement>>((uiElement) => 
+                c1.EmitDelegate<Func<UIElement, UIElement>>((uiElement) =>
                 {
                     uiElement.Width = StyleDimension.FromPixelsAndPercent(0.0f, 1f);
                     uiElement.Height = StyleDimension.FromPixelsAndPercent((float)(48 * (CharacterCreatorHairCount / 10 + (CharacterCreatorHairCount % 10 != 0 ? 1 : 0))), 0.0f);
-                    return uiElement; 
+                    return uiElement;
                 });
                 c1.Emit(OpCodes.Stloc, 4);
+                Logger.Debug("Successfully implemented IL Patch #1 in MakeHairstylesMenu");
             }
+            else { Logger.Debug("IL Patch #1 in MakeHairstylesMenu failed at search #1"); }
+
 
             // Second edit
             if (c1.TryGotoNext(
@@ -987,7 +977,9 @@ namespace HairLoader
                     return uiElement;
                 });
                 c1.Emit(OpCodes.Stloc, 4);
+                Logger.Debug("Successfully implemented IL Patch #2 in MakeHairstylesMenu");
             }
+            else { Logger.Debug("IL Patch #2 in MakeHairstylesMenu failed at search #1"); }
         }
     }
 
