@@ -23,6 +23,7 @@ Please leave your suggestions, bugs and other notices in the Steam Workshop comm
 
 
 Changelog:
+- 0.2.0.1 : Updated description file
 - 0.2.0.0 : Now using IL patches instead of detours.
 - 0.1.0.5 : Added extra button to show locked hairstyles.
 - 0.1.0.4 : Fixed an issue with changing hairstyles.
