@@ -46,8 +46,6 @@ namespace HairLoader
         public static Dictionary<string, Dictionary<string, PlayerHairEntry>> HairTable = new Dictionary<string, Dictionary<string, PlayerHairEntry>>();
         public static Dictionary<string, string> ModDisplayNames = new Dictionary<string, string>();
 
-        public static int CharacterCreatorHairCount = 0;
-
         // Point to this Mod object Instance.
         public HairLoader()
         {
@@ -213,18 +211,12 @@ namespace HairLoader
                     player.GetModPlayer<HairLoaderPlayer>().Hair_modClassName = modClassName;
                     player.GetModPlayer<HairLoaderPlayer>().Hair_hairEntryName = hairEntryName;
 
-                    if (Main.netMode != NetmodeID.Server)
+                    if (Main.netMode != NetmodeID.Server
+                        && HairTable.ContainsKey(modClassName)
+                        && HairTable[modClassName].ContainsKey(hairEntryName)
+                        && HairTable[modClassName][hairEntryName].index != -1)
                     {
-                        if (HairTable.ContainsKey(modClassName))
-                        {
-                            if (HairTable[modClassName].ContainsKey(hairEntryName))
-                            {
-                                if (HairTable[modClassName][hairEntryName].index != -1)
-                                {
-                                    player.hair = HairTable[modClassName][hairEntryName].index;
-                                }
-                            }
-                        }
+                        player.hair = HairTable[modClassName][hairEntryName].index;
                     }
 
                     if (Main.netMode == NetmodeID.Server)
@@ -303,8 +295,6 @@ namespace HairLoader
                     ModDisplayNames.Add("Vanilla", "Terraria");
                 }
             }
-
-            CalculateCharacterCreatorHairCount();
         }
 
         public static string GetVanillaUnlockHint(int index)
@@ -338,18 +328,22 @@ namespace HairLoader
             }
         }
 
-        public static void CalculateCharacterCreatorHairCount()
+        public static int GetCharacterCreatorHairCount()
         {
+            int amount = 0;
+
             foreach (KeyValuePair<string, Dictionary<string, PlayerHairEntry>> mod in HairTable)
             {
                 foreach (KeyValuePair<string, PlayerHairEntry> hair in mod.Value)
                 {
                     if (hair.Value.CharacterCreator)
                     {
-                        CharacterCreatorHairCount++;
+                        amount++;
                     }
                 }
             }
+
+            return amount;
         }
 
         public static void RegisterCustomHair(string modClassName, string modDisplayName, string hairEntryName, Asset<Texture2D> hair, Asset<Texture2D> hairAlt, float hairOffset, int currency, int hairPrice, int colorPrice, bool? CharacterCreator, bool? UnlockCondition , string UnlockHint = null)
@@ -385,11 +379,6 @@ namespace HairLoader
                     HairWindowVisible = UnlockCondition.HasValue ? !UnlockCondition.Value : false,
                     UnlockHint = UnlockHint
                 });
-
-                if (CharacterCreator == true)
-                {
-                    CharacterCreatorHairCount++;
-                }
             }
             else
             {
@@ -886,8 +875,9 @@ namespace HairLoader
                 c1.Emit(OpCodes.Ldloc, 4);
                 c1.EmitDelegate<Func<UIElement, UIElement>>((uiElement) =>
                 {
+                    int amount = GetCharacterCreatorHairCount();
                     uiElement.Width = StyleDimension.FromPixelsAndPercent(0.0f, 1f);
-                    uiElement.Height = StyleDimension.FromPixelsAndPercent((float)(48 * (CharacterCreatorHairCount / 10 + (CharacterCreatorHairCount % 10 != 0 ? 1 : 0))), 0.0f);
+                    uiElement.Height = StyleDimension.FromPixelsAndPercent((float)(48 * (amount / 10 + (amount % 10 != 0 ? 1 : 0))), 0.0f);
                     return uiElement;
                 });
                 c1.Emit(OpCodes.Stloc, 4);
