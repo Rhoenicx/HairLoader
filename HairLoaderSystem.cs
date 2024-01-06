@@ -5,6 +5,8 @@ using Terraria;
 using Terraria.ID;
 using Terraria.UI;
 using HairLoader.UI;
+using Microsoft.Xna.Framework.Graphics;
+using static Terraria.ModLoader.ModContent;
 
 namespace HairLoader
 {
@@ -26,6 +28,15 @@ namespace HairLoader
             // Code not ran on server
             if (!Main.dedServ)
             {
+                // Load UI textures
+                Main.instance.LoadItem(ItemID.PlatinumCoin);
+                Main.instance.LoadItem(ItemID.GoldCoin);
+                Main.instance.LoadItem(ItemID.SilverCoin);
+                Main.instance.LoadItem(ItemID.CopperCoin);
+                HairSlot.backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
+                HairSlot.highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
+                HairSlot.hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
+
                 // Activate the new HairWindow UI element
                 HairWindow = new HairWindow();
                 HairWindow.Activate();

@@ -12,7 +12,7 @@ namespace HairLoader
             {
                 if (!firstButton)
                 {
-                    HairloaderSystem.Instance.HairWindow.OpenHairWindow();
+                    HairloaderSystem.Instance.HairWindow.OpenHairWindow(npc);
                     return false;
                 }
             }

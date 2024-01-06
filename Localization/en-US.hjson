@@ -1,0 +1,189 @@
+Mods: {
+	HairLoader: {
+		HairStyles: {
+			TerrariaName: Terraria
+			UnlockHint1: Available at the stylist
+			UnlockHint2: Unlocked by defeating Plantera
+			UnlockHint3: Unlocked by defeating the Martian invasion
+			UnlockHint4: Unlocked by defeating the Martian invasion and the Moon Lord
+
+			Names: {
+				HairStyle0: Vanilla 0
+				HairStyle1: Vanilla 1
+				HairStyle2: Vanilla 2
+				HairStyle3: Vanilla 3
+				HairStyle4: Vanilla 4
+				HairStyle5: Vanilla 5
+				HairStyle6: Vanilla 6
+				HairStyle7: Vanilla 7
+				HairStyle8: Vanilla 8
+				HairStyle9: Vanilla 9
+				HairStyle10: Vanilla 10
+				HairStyle11: Vanilla 11
+				HairStyle12: Vanilla 12
+				HairStyle13: Vanilla 13
+				HairStyle14: Vanilla 14
+				HairStyle15: Vanilla 15
+				HairStyle16: Vanilla 16
+				HairStyle17: Vanilla 17
+				HairStyle18: Vanilla 18
+				HairStyle19: Vanilla 19
+				HairStyle20: Vanilla 20
+				HairStyle21: Vanilla 21
+				HairStyle22: Vanilla 22
+				HairStyle23: Vanilla 23
+				HairStyle24: Vanilla 24
+				HairStyle25: Vanilla 25
+				HairStyle26: Vanilla 26
+				HairStyle27: Vanilla 27
+				HairStyle28: Vanilla 28
+				HairStyle29: Vanilla 29
+				HairStyle30: Vanilla 30
+				HairStyle31: Vanilla 31
+				HairStyle32: Vanilla 32
+				HairStyle33: Vanilla 33
+				HairStyle34: Vanilla 34
+				HairStyle35: Vanilla 35
+				HairStyle36: Vanilla 36
+				HairStyle37: Vanilla 37
+				HairStyle38: Vanilla 38
+				HairStyle39: Vanilla 39
+				HairStyle40: Vanilla 40
+				HairStyle41: Vanilla 41
+				HairStyle42: Vanilla 42
+				HairStyle43: Vanilla 43
+				HairStyle44: Vanilla 44
+				HairStyle45: Vanilla 45
+				HairStyle46: Vanilla 46
+				HairStyle47: Vanilla 47
+				HairStyle48: Vanilla 48
+				HairStyle49: Vanilla 49
+				HairStyle50: Vanilla 50
+				HairStyle51: Vanilla 51
+				HairStyle52: Vanilla 52
+				HairStyle53: Vanilla 53
+				HairStyle54: Vanilla 54
+				HairStyle55: Vanilla 55
+				HairStyle56: Vanilla 56
+				HairStyle57: Vanilla 57
+				HairStyle58: Vanilla 58
+				HairStyle59: Vanilla 59
+				HairStyle60: Vanilla 60
+				HairStyle61: Vanilla 61
+				HairStyle62: Vanilla 62
+				HairStyle63: Vanilla 63
+				HairStyle64: Vanilla 64
+				HairStyle65: Vanilla 65
+				HairStyle66: Vanilla 66
+				HairStyle67: Vanilla 67
+				HairStyle68: Vanilla 68
+				HairStyle69: Vanilla 69
+				HairStyle70: Vanilla 70
+				HairStyle71: Vanilla 71
+				HairStyle72: Vanilla 72
+				HairStyle73: Vanilla 73
+				HairStyle74: Vanilla 74
+				HairStyle75: Vanilla 75
+				HairStyle76: Vanilla 76
+				HairStyle77: Vanilla 77
+				HairStyle78: Vanilla 78
+				HairStyle79: Vanilla 79
+				HairStyle80: Vanilla 80
+				HairStyle81: Vanilla 81
+				HairStyle82: Vanilla 82
+				HairStyle83: Vanilla 83
+				HairStyle84: Vanilla 84
+				HairStyle85: Vanilla 85
+				HairStyle86: Vanilla 86
+				HairStyle87: Vanilla 87
+				HairStyle88: Vanilla 88
+				HairStyle89: Vanilla 89
+				HairStyle90: Vanilla 90
+				HairStyle91: Vanilla 91
+				HairStyle92: Vanilla 92
+				HairStyle93: Vanilla 93
+				HairStyle94: Vanilla 94
+				HairStyle95: Vanilla 95
+				HairStyle96: Vanilla 96
+				HairStyle97: Vanilla 97
+				HairStyle98: Vanilla 98
+				HairStyle99: Vanilla 99
+				HairStyle100: Vanilla 100
+				HairStyle101: Vanilla 101
+				HairStyle102: Vanilla 102
+				HairStyle103: Vanilla 103
+				HairStyle104: Vanilla 104
+				HairStyle105: Vanilla 105
+				HairStyle106: Vanilla 106
+				HairStyle107: Vanilla 107
+				HairStyle108: Vanilla 108
+				HairStyle109: Vanilla 109
+				HairStyle110: Vanilla 110
+				HairStyle111: Vanilla 111
+				HairStyle112: Vanilla 112
+				HairStyle113: Vanilla 113
+				HairStyle114: Vanilla 114
+				HairStyle115: Vanilla 115
+				HairStyle116: Vanilla 116
+				HairStyle117: Vanilla 117
+				HairStyle118: Vanilla 118
+				HairStyle119: Vanilla 119
+				HairStyle120: Vanilla 120
+				HairStyle121: Vanilla 121
+				HairStyle122: Vanilla 122
+				HairStyle123: Vanilla 123
+				HairStyle124: Vanilla 124
+				HairStyle125: Vanilla 125
+				HairStyle126: Vanilla 126
+				HairStyle127: Vanilla 127
+				HairStyle128: Vanilla 128
+				HairStyle129: Vanilla 129
+				HairStyle130: Vanilla 130
+				HairStyle131: Vanilla 131
+				HairStyle132: Vanilla 132
+				HairStyle133: Vanilla 133
+				HairStyle134: Vanilla 134
+				HairStyle135: Vanilla 135
+				HairStyle136: Vanilla 136
+				HairStyle137: Vanilla 137
+				HairStyle138: Vanilla 138
+				HairStyle139: Vanilla 139
+				HairStyle140: Vanilla 140
+				HairStyle141: Vanilla 141
+				HairStyle142: Vanilla 142
+				HairStyle143: Vanilla 143
+				HairStyle144: Vanilla 144
+				HairStyle145: Vanilla 145
+				HairStyle146: Vanilla 146
+				HairStyle147: Vanilla 147
+				HairStyle148: Vanilla 148
+				HairStyle149: Vanilla 149
+				HairStyle150: Vanilla 150
+				HairStyle151: Vanilla 151
+				HairStyle152: Vanilla 152
+				HairStyle153: Vanilla 153
+				HairStyle154: Vanilla 154
+				HairStyle155: Vanilla 155
+				HairStyle156: Vanilla 156
+				HairStyle157: Vanilla 157
+				HairStyle158: Vanilla 158
+				HairStyle159: Vanilla 159
+				HairStyle160: Vanilla 160
+				HairStyle161: Vanilla 161
+				HairStyle162: Vanilla 162
+				HairStyle163: Vanilla 163
+				HairStyle164: Vanilla 164
+			}
+		}
+
+		HairWindowUI: {
+			Categories.AllEntry: All
+			CategoryText: Categories:
+			HairStylesText: Hair styles:
+			ColorText: Color:
+			BuyText: Buy
+			CancelText: Cancel
+			LockedButton: Show locked hairstyles
+		}
+	}
+}

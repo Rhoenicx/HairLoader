@@ -1,7 +1,8 @@
 author = Rhoenicx
-version = 0.2.0.1
-displayName = HairLoader
+version = 0.3.0.0
+displayName = HairWindow
 hideCode = false
 hideResources = false
+side = Client
 homepage = https://github.com/Rhoenicx/HairLoader
 buildIgnore = obj/,bin/,.vs/,.git/
