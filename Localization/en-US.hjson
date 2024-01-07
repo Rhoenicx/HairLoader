@@ -184,6 +184,7 @@ Mods: {
 			BuyText: Buy
 			CancelText: Cancel
 			LockedButton: Show locked hairstyles
+			Cost: Price
 		}
 	}
 }

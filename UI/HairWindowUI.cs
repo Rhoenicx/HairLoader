@@ -10,41 +10,44 @@ using Terraria.ID;
 using Terraria.Audio;
 using Terraria.GameContent;
 using Terraria.GameContent.UI.Elements;
-using Terraria.ModLoader;
 using Terraria.Localization;
 using ReLogic.Content;
 using static Terraria.ModLoader.ModContent;
 using System.Collections.Generic;
 using Terraria.GameContent.UI;
+using Terraria.UI.Chat;
 
 namespace HairLoader.UI
 {
     public class HairWindow : UIState
     {
         // Visibility of panel
-        public static bool Visible;
+        public bool Visible;
 
         // Highlights
-        public static string HighlightDisplayName = "All";
-        public static string HighlightText = null;
+        public string HighlightDisplayName = "All";
+        public string HighlightText = null;
 
         // New Selected Entry
-        public static int SelectedHairID;
+        public int SelectedHairID;
 
         // Save old player hair & color
-        public static int OldHairID;
-        public static Color OldHairColor;
+        public int OldHairID;
+        public Color OldHairColor;
 
         // Saved Colors
-        public static float Color_Hue;
-        public static float Color_Saturation;
-        public static float Color_Luminosity;
+        public float Color_Hue;
+        public float Color_Saturation;
+        public float Color_Luminosity;
 
         // Show Locked hairstyles
-        public static bool ShowLocked = false;
+        public bool ShowLocked = false;
 
         // Background Element
-        private UIPanel HairWindowPanel;
+        private DragableUIPanel HairWindowPanel;
+        public Vector2 HairWindowPosition => 
+            new(HairWindowPanel.Left.Pixels + HairWindowPanel.Left.Precent * Main.screenWidth,
+                HairWindowPanel.Top.Pixels + HairWindowPanel.Top.Precent * Main.screenHeight);
 
         // Mod List Element
         private UIPanel ModListPanel;
@@ -85,10 +88,10 @@ namespace HairLoader.UI
         public override void OnInitialize()
         {
             // Background of the HairWindow
-            HairWindowPanel = new UIPanel();
+            HairWindowPanel = new DragableUIPanel(this);
             HairWindowPanel.SetPadding(10);
             HairWindowPanel.Left.Set(-426f, 0.5f);
-            HairWindowPanel.Top.Set(0f, 0.6f);
+            HairWindowPanel.Top.Set(0f, 0.55f);
             HairWindowPanel.Width.Set(852f, 0f);
             HairWindowPanel.Height.Set(300f, 0f);
             HairWindowPanel.BackgroundColor = new Color(73, 94, 171);
@@ -172,19 +175,19 @@ namespace HairLoader.UI
             HairWindowPanel.Append(ColorPanel);
 
             // Hue Slider
-            ColorHueBar = new UIColorBar(0);
+            ColorHueBar = new UIColorBar(this, 0);
             ColorHueBar.Top.Set(34f, 0f);
             ColorHueBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorHueBar);
 
             // Saturation Slider
-            ColorSaturationBar = new UIColorBar(1);
+            ColorSaturationBar = new UIColorBar(this, 1);
             ColorSaturationBar.Top.Set(70f, 0f);
             ColorSaturationBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorSaturationBar);
 
             // Luminosity Slider
-            ColorLuminosityBar = new UIColorBar(2);
+            ColorLuminosityBar = new UIColorBar(this, 2);
             ColorLuminosityBar.Top.Set(106f, 0f);
             ColorLuminosityBar.Left.Set(636f, 0f);
             HairWindowPanel.Append(ColorLuminosityBar);
@@ -207,8 +210,7 @@ namespace HairLoader.UI
             PasteColorButton.OnLeftMouseDown += (a, b) =>
             {
                 SoundEngine.PlaySound(SoundID.MenuTick);
-                Color rgb;
-                if (!this.GetHexColor(((IClipboard)Platform.Get<IClipboard>()).Value, out rgb))
+                if (!GetHexColor(((IClipboard)Platform.Get<IClipboard>()).Value, out Color rgb))
                     return;
                 Vector3 hsl = Main.rgbToHsl(rgb);
                 Color_Hue = hsl.X;
@@ -225,7 +227,7 @@ namespace HairLoader.UI
             RandomizeColorButton.OnLeftMouseDown += (a, b) =>
             {
                 SoundEngine.PlaySound(SoundID.MenuTick);
-                Color rgb = new Color((int)Main.rand.Next(0, 256), (int)Main.rand.Next(0, 256), (int)Main.rand.Next(0, 256));
+                Color rgb = new((int)Main.rand.Next(0, 256), (int)Main.rand.Next(0, 256), (int)Main.rand.Next(0, 256));
                 Vector3 hsl = Main.rgbToHsl(rgb);
                 Color_Hue = hsl.X;
                 Color_Saturation = hsl.Y;
@@ -251,7 +253,7 @@ namespace HairLoader.UI
             HairWindowPanel.Append(HexCodeText);
 
             // Price
-            PriceElement = new UIPrice();
+            PriceElement = new UIPrice(this);
             PriceElement.Top.Set(208f, 0f);
             PriceElement.Left.Set(646f, 0f);
             PriceElement.Width.Set(178f, 0f);
@@ -298,7 +300,7 @@ namespace HairLoader.UI
             HairWindowPanel.Append(CancelText);
 
             // Show locked button
-            ShowLockedButton = new UISetting();
+            ShowLockedButton = new UISetting(this);
             ShowLockedButton.Top.Set(0f, 0f);
             ShowLockedButton.Left.Set(588f, 0f);
             ShowLockedButton.OnLeftMouseDown += (a, b) =>
@@ -326,14 +328,12 @@ namespace HairLoader.UI
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            CalculatedStyle dimensions = HairWindowPanel.GetInnerDimensions();
-
             if (HairWindowPanel.ContainsPoint(Main.MouseScreen))
             {
                 Main.LocalPlayer.mouseInterface = true;
             }
 
-            UpdateHexText(Main.hslToRgb(new Vector3(HairWindow.Color_Hue, HairWindow.Color_Saturation, HairWindow.Color_Luminosity)));
+            UpdateHexText(Main.hslToRgb(new Vector3(Color_Hue, Color_Saturation, Color_Luminosity)));
         }
 
         public override void Draw(SpriteBatch spriteBatch)
@@ -454,9 +454,11 @@ namespace HairLoader.UI
             }
 
             SoundEngine.PlaySound(SoundID.Coins);
+
+            NetMessage.SendData(MessageID.SyncPlayer, number: Main.myPlayer);
         }
 
-        internal static bool CanBuyHair()
+        internal bool CanBuyHair()
         {
             if (Main.player[Main.myPlayer].hair != OldHairID || Main.player[Main.myPlayer].hairColor != OldHairColor)
             {
@@ -464,7 +466,7 @@ namespace HairLoader.UI
 
                 if (Main.player[Main.myPlayer].hair != OldHairID)
                 {
-                    price += HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].HairPrice : SelectedHairID <= 51 ? 20000 : 200000;
+                    price += HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].HairPrice : 100000;
                 }
 
                 if (Main.player[Main.myPlayer].hairColor != OldHairColor)
@@ -472,7 +474,10 @@ namespace HairLoader.UI
                     price += HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].ColorPrice : 20000;
                 }
 
-                price = (int)((float)price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
+                if (HairLoader.HairTable[SelectedHairID].SpecialCurrencyID == -1)
+                {
+                    price = (int)(price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
+                }
 
                 if (Main.player[Main.myPlayer].BuyItem(price, HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].SpecialCurrencyID : -1))
                 {
@@ -483,7 +488,7 @@ namespace HairLoader.UI
             return false;
         }
 
-        internal void UpdateUnlocks()
+        internal static void UpdateUnlocks()
         {
             // Trick the vanilla UpdateUnlock code
             Main.hairWindow = true;
@@ -495,7 +500,7 @@ namespace HairLoader.UI
         {
             ModList.Clear();
 
-            ModSlot modListEntryAll = new ModSlot("All", Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry"));
+            ModSlot modListEntryAll = new("All", Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry"));
             modListEntryAll.OnLeftClick += (a, b) =>
             {
                 HighlightDisplayName = "All";
@@ -528,7 +533,7 @@ namespace HairLoader.UI
             foreach (KeyValuePair<string, string> entry in ModNames)
             {
                 // Create a new mod slot with the displayname of this modclass
-                ModSlot modListEntry = new ModSlot(entry.Key, entry.Value);
+                ModSlot modListEntry = new(entry.Key, entry.Value);
                 
                 // When the slot is clicked
                 modListEntry.OnLeftClick += (a, b) =>
@@ -568,7 +573,7 @@ namespace HairLoader.UI
                     }
 
                     // Add the hairstyle slot
-                    HairSlot slot = new HairSlot(entry.Key, !available);
+                    HairSlot slot = new(this, entry.Key, !available);
 
                     // When this hairslot is clicked set the following:
                     slot.OnLeftClick += (a, b) =>
@@ -604,13 +609,13 @@ namespace HairLoader.UI
         }
 
         // Function to update the text in the hex code text element
-        public void UpdateHexText(Color pendingColor) => HexCodeText.SetText(GetHexText(pendingColor));
+        private void UpdateHexText(Color pendingColor) => HexCodeText.SetText(GetHexText(pendingColor));
 
         // Function to convert the given color into a string
         private static string GetHexText(Color pendingColor) => "#" + pendingColor.Hex3().ToUpper();
 
         // Function used to determine if the given string is a hexcode
-        private bool GetHexColor(string hexString, out Color rgb)
+        internal static bool GetHexColor(string hexString, out Color rgb)
         {
             // Check if the string starts with a #
             if (hexString.StartsWith("#"))
@@ -619,10 +624,8 @@ namespace HairLoader.UI
                 hexString = hexString.Substring(1);
             }
 
-            uint result;
-
             // Check if the given string has length 6 or lower and try to parse it as an hexnumber
-            if (hexString.Length <= 6 && uint.TryParse(hexString, NumberStyles.HexNumber, (IFormatProvider)CultureInfo.CurrentCulture, out result))
+            if (hexString.Length <= 6 && uint.TryParse(hexString, NumberStyles.HexNumber, (IFormatProvider)CultureInfo.CurrentCulture, out uint result))
             {
                 // shift the bytes of the characters around to grab the individual numbers
                 uint num1 = result & (uint)byte.MaxValue;
@@ -639,7 +642,7 @@ namespace HairLoader.UI
             return false;
         }
 
-        private bool ModListContainsSelected()
+        internal bool ModListContainsSelected()
         {
             foreach (UIElement element in ModList._items)
             {
@@ -655,6 +658,16 @@ namespace HairLoader.UI
             HighlightDisplayName = "All";
             return false;
         }
+
+        public bool PreventDragging() => ModListPanel.ContainsPoint(Main.MouseScreen)
+            || HairListPanel.ContainsPoint(Main.MouseScreen)
+            || ColorPanel.ContainsPoint(Main.MouseScreen)
+            || CopyColorButton.ContainsPoint(Main.MouseScreen)
+            || PasteColorButton.ContainsPoint(Main.MouseScreen)
+            || RandomizeColorButton.ContainsPoint(Main.MouseScreen)
+            || BuyText.ContainsPoint(Main.MouseScreen)
+            || CancelText.ContainsPoint(Main.MouseScreen)
+            || ShowLockedButton.ContainsPoint(Main.MouseScreen);
     }
 
     // This is a Modslot element inside the list of mods
@@ -671,7 +684,7 @@ namespace HairLoader.UI
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             // If the text of this element is the current selected mod in the hairwindow
-            if (InternalName == HairWindow.HighlightDisplayName)
+            if (InternalName == HairloaderSystem.Instance.HairWindow.HighlightDisplayName)
             {
                 BackgroundColor = new Color(255, 199, 0);
             }
@@ -687,106 +700,121 @@ namespace HairLoader.UI
     // This is a hairslot element inside the grid of the hairwindow
     internal class HairSlot : UIElement
     {
-        private bool locked;
+        // Instance of the Hairwindow this element is placed on
+        private readonly HairWindow _hairWindow;
+
+        // Slot displays locked hairstyle
+        private readonly bool _locked;
+
+        // Hair ID this slot represents
+        private readonly int _hairID;
 
         // Scale
-        private float scale = 1f;
+        private readonly float _scale = 1f;
 
         // Offset of the hair in the slot
         private const int offsetX = 36;
         private const int offsetY = -8;
 
-        // Hair ID this slot represents
-        private int _hairID;
-
         // Vanilla textures for the slot
-        public static Asset<Texture2D> backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
-        public static Asset<Texture2D> highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
-        public static Asset<Texture2D> hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
+        public static Asset<Texture2D> backgroundTexture;
+        public static Asset<Texture2D> highlightTexture;
+        public static Asset<Texture2D> hoverTexture;
 
-        public HairSlot(int hairID, bool _locked)
+        public HairSlot(HairWindow window, int hairID, bool _locked)
         {
+            // Assign the window
+            _hairWindow = window;
+
             // On create write the hair and mod names to the internal variables
             this._hairID = hairID;
-
-            this.locked = _locked;
+            this._locked = _locked;
 
             // Set the width and height
-            this.Width.Set(backgroundTexture.Width() * scale, 0f);
-            this.Height.Set(backgroundTexture.Height() * scale, 0f);
+            this.Width.Set(backgroundTexture.Width() * _scale, 0f);
+            this.Height.Set(backgroundTexture.Height() * _scale, 0f);
         }
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
             // Draw the background texture
-            spriteBatch.Draw(backgroundTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(backgroundTexture.Size(), 2f)), null, locked ? Color.Gray : Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+            backgroundTexture ??= Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
+            spriteBatch.Draw(backgroundTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(backgroundTexture.Size(), 2f)), null, _locked ? Color.Gray : Color.White, 0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);
 
             // If the hairstyle in this slot is the one the player is currently wearing
+            highlightTexture ??= Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
             if (Main.player[Main.myPlayer].hair == _hairID)
             {
                 // draw the highlight texture
-                spriteBatch.Draw(highlightTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(highlightTexture.Size(), 2f)), null, locked ? Color.Gray : Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                spriteBatch.Draw(highlightTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(highlightTexture.Size(), 2f)), null, _locked ? Color.Gray : Color.White, 0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);
             }
 
             // If the mouse is hovering over this slot
             if (IsMouseHovering)
             {
                 // Draw the hover texture
-                spriteBatch.Draw(hoverTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(hoverTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+                hoverTexture ??= Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
+                spriteBatch.Draw(hoverTexture.Value, Vector2.Subtract(this.GetDimensions().Center(), Vector2.Divide(hoverTexture.Size(), 2f)), null, Color.White, 0f, Vector2.Zero, _scale, SpriteEffects.None, 0f);
 
                 // Set the highlight text of the hairwindow to the name of the hairstyle in this slot
                 if (HairLoader.HairTable.ContainsKey(_hairID) && HairLoader.HairTable[_hairID] != null)
                 {
                     if (HairLoader.HairTable[_hairID].HasCustomHairName)
                     {
-                        HairWindow.HighlightText = HairLoader.HairTable[_hairID].CustomHairNameIsLocalized
+                        _hairWindow.HighlightText = HairLoader.HairTable[_hairID].CustomHairNameIsLocalized
                             ? Language.GetTextValue(HairLoader.HairTable[_hairID].CustomHairName)
                             : HairLoader.HairTable[_hairID].CustomHairName;
                     }
                     else
                     {
-                        HairWindow.HighlightText = HairLoader.HairTable[_hairID].HairNameIsLocalized
+                        _hairWindow.HighlightText = HairLoader.HairTable[_hairID].HairNameIsLocalized
                             ? Language.GetTextValue(HairLoader.HairTable[_hairID].HairName)
                             : HairLoader.HairTable[_hairID].HairName;
                     }
 
                     if (HairLoader.HairTable[_hairID].HasUnlockHint)
                     {
-                        HairWindow.HighlightText += "\r\n" + (HairLoader.HairTable[_hairID].UnlockHintIsLocalized 
+                        _hairWindow.HighlightText += "\r\n" + (HairLoader.HairTable[_hairID].UnlockHintIsLocalized 
                             ? Language.GetTextValue(HairLoader.HairTable[_hairID].UnlockHint) 
                             : HairLoader.HairTable[_hairID].UnlockHint);
                     }
                 }
                 else
                 {
-                    HairWindow.HighlightText = "";
+                    _hairWindow.HighlightText = "";
                 }
             }
 
             // Draw the vanilla player textures in the slot => Head, eyeWhite and eye
-            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), locked ? Color.Gray : Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
             spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), locked ? Color.Gray : Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
 
             // Load the Hair textures
             Main.instance.LoadHair(_hairID);
 
             // Draw the full hairstyle
             Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false);
-            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 0, TextureAssets.PlayerHair[_hairID].Width(), 38), locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 0, TextureAssets.PlayerHair[_hairID].Width(), 38), _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
         }
     }
 
     internal class UISetting : UIElement
     {
-        Texture2D TickOff = TextureAssets.InventoryTickOff.Value;
-        Texture2D TickOn = TextureAssets.InventoryTickOn.Value;
+        // Instance of the Hairwindow this element is placed on
+        private readonly HairWindow _hairWindow;
 
-        public UISetting()
+        private readonly Texture2D _tickOff = TextureAssets.InventoryTickOff.Value;
+        private readonly Texture2D _tickOn = TextureAssets.InventoryTickOn.Value;
+
+        public UISetting(HairWindow window)
         {
-            this.Width.Set(TickOff.Width, 0f);
-            this.Height.Set(TickOff.Height, 0f);
+            // Assign the window
+            _hairWindow = window;
+
+            this.Width.Set(_tickOff.Width, 0f);
+            this.Height.Set(_tickOff.Height, 0f);
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
@@ -794,52 +822,58 @@ namespace HairLoader.UI
             // Size of this element
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
-            if (HairWindow.ShowLocked)
+            if (_hairWindow.ShowLocked)
             {
-                spriteBatch.Draw(TickOn, dimensions.Center(), TickOn.Bounds, Color.White, 0f, TickOn.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(_tickOn, dimensions.Center(), _tickOn.Bounds, Color.White, 0f, _tickOn.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
             }
             else
             {
-                spriteBatch.Draw(TickOff, dimensions.Center(), TickOn.Bounds, Color.White, 0f, TickOn.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(_tickOff, dimensions.Center(), _tickOn.Bounds, Color.White, 0f, _tickOn.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
             }
 
             if (IsMouseHovering)
             {
-                HairWindow.HighlightText = Language.GetTextValue("Mods.HairLoader.HairWindowUI.LockedButton");
+                _hairWindow.HighlightText = Language.GetTextValue("Mods.HairLoader.HairWindowUI.LockedButton");
             }
         }
     }
 
     internal class UIColorBar : UIElement
     {
+        // Instance of the Hairwindow this element is placed on
+        private readonly HairWindow _hairWindow;
+
         // Base size of the Color Bar element
-        Rectangle rect = new Rectangle(0, 0, 178, 16);
+        private Rectangle _rect = new(0, 0, 178, 16);
 
         // Width of the side to the start of the inner colors
-        int rectSideWidth = 5;
+        private const int _rectSideWidth = 5;
 
         // Grab the vanilla textures for color sliders... (These are already loaded in during mod.load())
-        Texture2D HueBarTex = TextureAssets.Hue.Value;
-        Texture2D ColorBarTex = TextureAssets.ColorBar.Value;
-        Texture2D SliderHighlightTex = TextureAssets.ColorHighlight.Value;
-        Texture2D ColorBlipTex = TextureAssets.ColorBlip.Value;
-        Texture2D ColorSliderTex = TextureAssets.ColorSlider.Value;
+        private readonly Texture2D _hueBarTex = TextureAssets.Hue.Value;
+        private readonly Texture2D _colorBarTex = TextureAssets.ColorBar.Value;
+        private readonly Texture2D _sliderHighlightTex = TextureAssets.ColorHighlight.Value;
+        private readonly Texture2D _colorBlipTex = TextureAssets.ColorBlip.Value;
+        private readonly Texture2D _colorSliderTex = TextureAssets.ColorSlider.Value;
 
         // User is currently dragging 
-        public bool dragging;
+        private bool _dragging;
 
         // Type of this colorbar, 0 = Hue, 1 = Saturation, 2 = Luminosity
-        public int type;
+        private readonly int _type;
 
         // On create set this:
-        public UIColorBar(int _type)
+        public UIColorBar(HairWindow window, int type)
         {
-            // Size of the element
-            this.Width.Set(rect.Width, 0f);
-            this.Height.Set(rect.Height, 0f);
+            // Assign the window
+            _hairWindow = window;
 
             // Given type of this colorbar element
-            type = _type;
+            this._type = type;
+
+            // Size of the element
+            this.Width.Set(_rect.Width, 0f);
+            this.Height.Set(_rect.Height, 0f);
         }
 
         protected override void DrawSelf(SpriteBatch spriteBatch)
@@ -848,53 +882,53 @@ namespace HairLoader.UI
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
             // If the element type is a saturation or luminosity bar
-            if (type > 0)
+            if (_type > 0)
             {
                 // Draw the normal color bar texture without inner texture
-                spriteBatch.Draw(ColorBarTex, dimensions.Center(), rect, Color.White, 0f, ColorBarTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(_colorBarTex, dimensions.Center(), _rect, Color.White, 0f, _colorBarTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
             }
             else
             {
                 // Draw the specific hue bar texture for the color slider
-                spriteBatch.Draw(HueBarTex, dimensions.Center(), HueBarTex.Bounds, Color.White, 0f, HueBarTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(_hueBarTex, dimensions.Center(), _hueBarTex.Bounds, Color.White, 0f, _hueBarTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
             }
 
             // If we're hovering over this bar with the mouse cursor
             if (IsMouseHovering)
             {
                 // Draw the highlight texture
-                spriteBatch.Draw(SliderHighlightTex, dimensions.Center(), SliderHighlightTex.Bounds, Main.OurFavoriteColor, 0f, SliderHighlightTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
+                spriteBatch.Draw(_sliderHighlightTex, dimensions.Center(), _sliderHighlightTex.Bounds, Main.OurFavoriteColor, 0f, _sliderHighlightTex.Size() * 0.5f, 1f, SpriteEffects.None, 0f);
             }
 
             // If this is not the hue bar => draw the inner of this bar depending on the chosen color, saturation and luminosity
-            if (type > 0)
+            if (_type > 0)
             {
                 // The inner of this bar is made up from 168 segments (pixels)
-                for (int i = 0; i < rect.Width - rectSideWidth * 2; i++)
+                for (int i = 0; i < _rect.Width - _rectSideWidth * 2; i++)
                 {
                     // Calculate the current hsl value of the bar segment
-                    float pointX = (float)i / (float)(rect.Width - rectSideWidth * 2);
+                    float pointX = (float)i / (float)(_rect.Width - _rectSideWidth * 2);
 
                     // Get the color of the current segment in rgb
-                    Color rgb = type == 1 ? Main.hslToRgb(HairWindow.Color_Hue, pointX, HairWindow.Color_Luminosity) : Main.hslToRgb(HairWindow.Color_Hue, HairWindow.Color_Saturation, pointX);
+                    Color rgb = _type == 1 ? Main.hslToRgb(_hairWindow.Color_Hue, pointX, _hairWindow.Color_Luminosity) : Main.hslToRgb(_hairWindow.Color_Hue, _hairWindow.Color_Saturation, pointX);
 
                     // Draw the current segment with the calculated color
-                    spriteBatch.Draw(ColorBlipTex, new Vector2(dimensions.X + rectSideWidth + i, dimensions.Y + 4), rgb);
+                    spriteBatch.Draw(_colorBlipTex, new Vector2(dimensions.X + _rectSideWidth + i, dimensions.Y + 4), rgb);
                 }
             }
 
             float SliderPos = 0f;
 
             // Calculate the slider's position depending on the type of this color bar type
-            switch (type)
+            switch (_type)
             {
-                case 0: SliderPos = (dimensions.Width - 4) * HairWindow.Color_Hue; break;
-                case 1: SliderPos = (dimensions.Width - 4) * HairWindow.Color_Saturation; break;
-                case 2: SliderPos = (dimensions.Width - 4) * HairWindow.Color_Luminosity; break;
+                case 0: SliderPos = (dimensions.Width - 4) * _hairWindow.Color_Hue; break;
+                case 1: SliderPos = (dimensions.Width - 4) * _hairWindow.Color_Saturation; break;
+                case 2: SliderPos = (dimensions.Width - 4) * _hairWindow.Color_Luminosity; break;
             }
 
             // Draw the Slider on top of the color bar
-            spriteBatch.Draw(ColorSliderTex, new Vector2(dimensions.X + SliderPos - (ColorSliderTex.Width / 2), dimensions.Y - 4), ColorSliderTex.Bounds, Color.White);
+            spriteBatch.Draw(_colorSliderTex, new Vector2(dimensions.X + SliderPos - (_colorSliderTex.Width / 2), dimensions.Y - 4), _colorSliderTex.Bounds, Color.White);
         }
 
         public override void Update(GameTime gameTime)
@@ -902,7 +936,7 @@ namespace HairLoader.UI
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
             // Check whether the user has started dragging the slider and still has the mouse button held down
-            if (dragging)
+            if (_dragging)
             {
                 // Calculate the point of the mouse cursor as a 0f to 1f float depending on the width of the color bar
                 float pointX = (Main.MouseScreen.X - dimensions.Position().X) / dimensions.Width;
@@ -922,21 +956,21 @@ namespace HairLoader.UI
                 }
 
                 // Depending on the type of the bar write the point x value to the color float of the hairwindow, also apply it to the player
-                switch (type)
+                switch (_type)
                 {
                     case 0:
-                        HairWindow.Color_Hue = pointX;
-                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(HairWindow.Color_Hue, HairWindow.Color_Saturation, HairWindow.Color_Luminosity);
+                        _hairWindow.Color_Hue = pointX;
+                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(_hairWindow.Color_Hue, _hairWindow.Color_Saturation, _hairWindow.Color_Luminosity);
                         break;
 
                     case 1:
-                        HairWindow.Color_Saturation = pointX;
-                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(HairWindow.Color_Hue, HairWindow.Color_Saturation, HairWindow.Color_Luminosity);
+                        _hairWindow.Color_Saturation = pointX;
+                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(_hairWindow.Color_Hue, _hairWindow.Color_Saturation, _hairWindow.Color_Luminosity);
                         break;
 
                     case 2:
-                        HairWindow.Color_Luminosity = pointX;
-                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(HairWindow.Color_Hue, HairWindow.Color_Saturation, HairWindow.Color_Luminosity);
+                        _hairWindow.Color_Luminosity = pointX;
+                        Main.player[Main.myPlayer].hairColor = Main.hslToRgb(_hairWindow.Color_Hue, _hairWindow.Color_Saturation, _hairWindow.Color_Luminosity);
                         break;
                 }
             }
@@ -947,7 +981,7 @@ namespace HairLoader.UI
         {
             base.LeftMouseDown(evt);
             // user started 'dragging' 
-            dragging = true;
+            _dragging = true;
         }
 
         // Rising adge on mouse up
@@ -955,101 +989,95 @@ namespace HairLoader.UI
         {
             base.LeftMouseUp(evt);
             // user stopped 'dragging' 
-            dragging = false;
+            _dragging = false;
         }
     }
 
     internal class UIPrice : UIElement
     {
-        private float priceAdjustment = (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment;
+        // Instance of the Hairwindow this element is placed on
+        private readonly HairWindow _hairWindow;
+
+        public UIPrice(HairWindow window)
+        { 
+            _hairWindow = window;
+        }
+
         protected override void DrawSelf(SpriteBatch spriteBatch)
         {
-            priceAdjustment = (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment;
+            // Return if the selected hair does not exist in the hairtable or when there are no changes on the player
+            if (!HairLoader.HairTable.ContainsKey(_hairWindow.SelectedHairID)
+                || (_hairWindow.SelectedHairID == _hairWindow.OldHairID && Main.player[Main.myPlayer].hairColor == _hairWindow.OldHairColor))
+            {
+                return;
+            }
+
+            Vector2 windowPosition = _hairWindow.HairWindowPosition;
             CalculatedStyle dimensions = base.GetInnerDimensions();
 
-            // Return if the selected hair does not exist in the hairtable
-            if (!HairLoader.HairTable.ContainsKey(HairWindow.SelectedHairID))
-            {
-                return;
-            }
-
-            // Return if the selected hairstyle and color is the same as the old hairstyle and color
-            if (HairWindow.SelectedHairID == HairWindow.OldHairID && Main.player[Main.myPlayer].hairColor == HairWindow.OldHairColor)
-            {
-                return;
-            }
-
             // Check which currency the hairstyle uses
-            if (!HairLoader.HairTable[HairWindow.SelectedHairID].OverridePrice 
-                || (HairLoader.HairTable[HairWindow.SelectedHairID].OverridePrice && HairLoader.HairTable[HairWindow.SelectedHairID].SpecialCurrencyID == -1))
+            if (!HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
+                || (HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice && HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID == -1))
             {
-                // Regular Coins
+                // Draw the vanilla savings popup
+                ItemSlot.DrawSavings(Main.spriteBatch, windowPosition.X + 632f, windowPosition.Y + 160f, true);
+
                 int price = 0;
-                int platinum = 0;
-                int gold = 0;
-                int silver = 0;
-                int copper = 0;
 
                 // Check if the hairstyle has been changed
-                if (HairWindow.SelectedHairID != HairWindow.OldHairID)
+                if (_hairWindow.SelectedHairID != _hairWindow.OldHairID)
                 {
                     // Increase price with hair buy price
-                    price += HairLoader.HairTable[HairWindow.SelectedHairID].OverridePrice 
-                        ? HairLoader.HairTable[HairWindow.SelectedHairID].HairPrice 
-                        : HairWindow.SelectedHairID <= 51 ? 20000 : 200000;
+                    price += HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
+                        ? HairLoader.HairTable[_hairWindow.SelectedHairID].HairPrice 
+                        : 100000;
                 }
 
                 // Check if the color has been changed
-                if (Main.player[Main.myPlayer].hairColor != HairWindow.OldHairColor)
+                if (Main.player[Main.myPlayer].hairColor != _hairWindow.OldHairColor)
                 {
                     // Increase price with hair re-color price
-                    price += HairLoader.HairTable[HairWindow.SelectedHairID].OverridePrice
-                        ? HairLoader.HairTable[HairWindow.SelectedHairID].ColorPrice
+                    price += HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice
+                        ? HairLoader.HairTable[_hairWindow.SelectedHairID].ColorPrice
                         : 20000;
                 }
 
                 // Apply vanilla price adjustments
-                price = (int)((float)price * priceAdjustment);
-
-                // Calculate the amount of platinum coins
-                if (price >= 1000000)
+                if (HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID != -1)
                 {
-                    platinum = price / 1000000;
-                    price -= platinum * 1000000;
+                    price = (int)((float)price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
                 }
 
-                // Calculate the amount of gold coins
-                if (price >= 10000)
+                // Calculate a new start position for the prices
+                Vector2 pricePosition = new Vector2(windowPosition.X + 632f, windowPosition.Y + 190f);
+
+                // Get the text
+                string text = Language.GetTextValue("Mods.HairLoader.HairWindowUI.Cost");
+
+                // Draw Cost Text
+                Utils.DrawBorderStringFourWay(
+                    spriteBatch,
+                    FontAssets.MouseText.Value,
+                    text,
+                    pricePosition.X,
+                    pricePosition.Y + 40f,
+                    Color.White * ((float)Main.mouseTextColor / (float)byte.MaxValue),
+                    Color.Black,
+                    Vector2.Zero);
+
+                int[] coinsArray = Utils.CoinsSplit(price);
+
+                for (int index = 0; index < 4; index++)
                 {
-                    gold = price / 10000;
-                    price -= gold * 10000;
+                    Main.instance.LoadItem(74 - index);
+                    Vector2 position = new Vector2(pricePosition.X + ChatManager.GetStringSize(FontAssets.MouseText.Value, text, Vector2.One).X + 24f * index + 45f, pricePosition.Y + 50f);
+                    spriteBatch.Draw(TextureAssets.Item[74 - index].Value, position, new Rectangle?(), Color.White, 0.0f, TextureAssets.Item[74 - index].Value.Size() * 0.5f, 1f, SpriteEffects.None, 0.0f);
+                    Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.ItemStack.Value, coinsArray[3 - index].ToString(), position.X - 11f, position.Y, Color.White, Color.Black, new Vector2(0.3f), 0.75f);
                 }
-
-                // Calculate the amount of silver coins
-                if (price >= 100)
-                {
-                    silver = price / 100;
-                    price -= silver * 100;
-                }
-
-                // Amount left is the amount of copper coins
-                copper = price;
-
-                // Draw the 4 coins textures
-                spriteBatch.Draw(TextureAssets.Item[ItemID.PlatinumCoin].Value, dimensions.Position() + new Vector2(80f - 60f, 0f), TextureAssets.Item[ItemID.PlatinumCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(TextureAssets.Item[ItemID.GoldCoin].Value, dimensions.Position() + new Vector2(80f - 20f, 0f), TextureAssets.Item[ItemID.GoldCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(TextureAssets.Item[ItemID.SilverCoin].Value, dimensions.Position() + new Vector2(80f + 20f, 2f), TextureAssets.Item[ItemID.SilverCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-                spriteBatch.Draw(TextureAssets.Item[ItemID.CopperCoin].Value, dimensions.Position() + new Vector2(80f + 60f, 4f), TextureAssets.Item[ItemID.CopperCoin].Value.Bounds, Color.White, 0f, TextureAssets.Item[ItemID.PlatinumCoin].Size() * 0.5f, 1f, SpriteEffects.None, 0f);
-
-                // Draw the price text underneath the coins
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, platinum.ToString(), dimensions.Position() + new Vector2(80f - 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, gold.ToString(), dimensions.Position() + new Vector2(80f - 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, silver.ToString(), dimensions.Position() + new Vector2(80f + 20f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, copper.ToString(), dimensions.Position() + new Vector2(80f + 60f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
             }
-            else if (HairLoader.HairTable[HairWindow.SelectedHairID].OverridePrice 
-                && HairLoader.HairTable[HairWindow.SelectedHairID].SpecialCurrencyID != -1 
-                && CustomCurrencyManager.TryGetCurrencySystem(HairLoader.HairTable[HairWindow.SelectedHairID].SpecialCurrencyID, out CustomCurrencySystem system))
+            else if (HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
+                && HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID != -1 
+                && CustomCurrencyManager.TryGetCurrencySystem(HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID, out CustomCurrencySystem system))
             {
                 /*
 

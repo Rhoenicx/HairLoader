@@ -7,19 +7,27 @@ namespace HairLoader.UI
 {
 	class DragableUIPanel : UIPanel
 	{
-		private Vector2 _offset;
+        // Instance of the Hairwindow this element is placed on
+        private readonly HairWindow _hairWindow;
+
+        private Vector2 _offset;
 		private bool _dragging;
+
+		public DragableUIPanel(HairWindow window)
+		{ 
+			_hairWindow = window;
+		}
 
 		public override void LeftMouseDown(UIMouseEvent evt)
 		{
 			base.LeftMouseDown(evt);
-			DragStart(evt);
+			if (!_hairWindow.PreventDragging()) DragStart(evt);
 		}
 
 		public override void LeftMouseUp(UIMouseEvent evt)
 		{
 			base.LeftMouseUp(evt);
-			DragEnd(evt);
+            if (!_hairWindow.PreventDragging()) DragEnd(evt);
 		}
 
 		private void DragStart(UIMouseEvent evt)
