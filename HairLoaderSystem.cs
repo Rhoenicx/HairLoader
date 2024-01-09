@@ -8,90 +8,90 @@ using HairLoader.UI;
 using Microsoft.Xna.Framework.Graphics;
 using static Terraria.ModLoader.ModContent;
 
-namespace HairLoader
-{
-     class HairloaderSystem : ModSystem
-     {
-        // UI elements
-        public HairWindow HairWindow;
-        public UserInterface HairWindowInterface;
-
-        internal static HairloaderSystem Instance;
-
-        public HairloaderSystem()
+namespace HairLoader;
+ class HairloaderSystem : ModSystem
+ {
+    // UI elements
+    public HairWindow HairWindow;
+    public UserInterface HairWindowInterface;
+ 
+    internal static HairloaderSystem Instance;
+ 
+    public HairloaderSystem()
+    {
+        // Create instance
+        Instance = this;
+    }
+ 
+    public override void Load()
+    {
+        // Code not ran on server
+        if (!Main.dedServ)
         {
-            Instance = this;
+            // Load UI textures
+            HairSlot.backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
+            HairSlot.highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
+            HairSlot.hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
+ 
+            // Activate the new HairWindow UI element
+            HairWindow = new HairWindow();
+            HairWindow.Activate();
+ 
+            // Setup the UserInterface of the HairWindow
+            HairWindowInterface = new UserInterface();
+            HairWindowInterface.SetState(HairWindow);
         }
-
-        public override void Load()
+    }
+ 
+    public override void Unload()
+    {
+        if (!Main.dedServ)
         {
-            // Code not ran on server
-            if (!Main.dedServ)
-            {
-                // Load UI textures
-                HairSlot.backgroundTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanel");
-                HairSlot.highlightTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelHighlight");
-                HairSlot.hoverTexture = Request<Texture2D>("Terraria/Images/UI/CharCreation/CategoryPanelBorder");
-
-                // Activate the new HairWindow UI element
-                HairWindow = new HairWindow();
-                HairWindow.Activate();
-
-                HairWindowInterface = new UserInterface();
-                HairWindowInterface.SetState(HairWindow);
-            }
+            HairWindow = null;
+            HairWindowInterface = null;
         }
-
-        public override void Unload()
+        
+        Instance = null;
+    }
+ 
+    public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
+    {
+        int vanillaHairWindowIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Hair Window"));
+        if (vanillaHairWindowIndex != -1)
         {
-            if (!Main.dedServ)
-            {
-                HairWindow = null;
-                HairWindowInterface = null;
-            }
-            
-            Instance = null;
-        }
-
-        public override void ModifyInterfaceLayers(List<GameInterfaceLayer> layers)
-        {
-            int vanillaHairWindowIndex = layers.FindIndex(layer => layer.Name.Equals("Vanilla: Hair Window"));
-            if (vanillaHairWindowIndex != -1)
-            {
-                layers.Insert(vanillaHairWindowIndex, new LegacyGameInterfaceLayer(
-                    "HairLoader: Hair Window",
-                    delegate
-                    {
-                        if (HairWindow.Visible)
-                        {
-                            HairWindowInterface.Draw(Main.spriteBatch, new GameTime());
-                        }
-                        return true;
-                    },
-                    InterfaceScaleType.UI)
-                );
-            }
-
-
-            base.ModifyInterfaceLayers(layers);
-        }
-
-        public override void UpdateUI(GameTime gameTime)
-        {
-            if (Main.hairWindow)
-            {
-                Main.hairWindow = !Main.hairWindow;
-
-                if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
+            layers.Insert(vanillaHairWindowIndex, new LegacyGameInterfaceLayer(
+                "HairLoader: Hair Window",
+                delegate
                 {
-                    Main.player[Main.myPlayer].SetTalkNPC(-1);
-                }
-            }
-
-            if (HairWindowInterface != null && HairWindow.Visible)
-            {
-                HairWindowInterface.Update(gameTime);
-            }
+                    if (HairWindow.Visible)
+                    {
+                        HairWindowInterface.Draw(Main.spriteBatch, new GameTime());
+                    }
+                    return true;
+                },
+                InterfaceScaleType.UI)
+            );
         }
+ 
+        base.ModifyInterfaceLayers(layers);
+    }
+ 
+    public override void UpdateUI(GameTime gameTime)
+    {
+        // Run the Update hook for our HairWindow interface,
+        // only when the window is currently visible
+        if (HairWindowInterface != null && HairWindow.Visible)
+        {
+            HairWindowInterface.Update(gameTime);
+        }
+    }
+}
+
+public class HairLoaderPlayer : ModPlayer
+{
+    public override void OnEnterWorld()
+    {
+        // Reset the position of the window when entering a world
+        HairloaderSystem.Instance.HairWindow.ResetPosition();
     }
 }

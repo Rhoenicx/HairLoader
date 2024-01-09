@@ -16,6 +16,8 @@ using static Terraria.ModLoader.ModContent;
 using System.Collections.Generic;
 using Terraria.GameContent.UI;
 using Terraria.UI.Chat;
+using System.Reflection;
+using System.Linq;
 
 namespace HairLoader.UI
 {
@@ -31,6 +33,9 @@ namespace HairLoader.UI
         // New Selected Entry
         public int SelectedHairID;
 
+        // Price of the new selected hair and/or color
+        public int BuyPrice = 0;
+
         // Save old player hair & color
         public int OldHairID;
         public Color OldHairColor;
@@ -42,6 +47,11 @@ namespace HairLoader.UI
 
         // Show Locked hairstyles
         public bool ShowLocked = false;
+
+        // Animation
+        private const int numAnimationFrames = 12;
+        public int AnimationProgress;
+        private int AnimationCounter;
 
         // Background Element
         private DragableUIPanel HairWindowPanel;
@@ -316,12 +326,33 @@ namespace HairLoader.UI
             Append(HairWindowPanel);
         }
 
+        public void ResetPosition()
+        {
+            HairWindowPanel.Left.Set(-426f, 0.5f);
+            HairWindowPanel.Top.Set(0f, 0.55f);
+            HairWindowPanel.Recalculate();
+        }
+
         public override void Update(GameTime gameTime)
         {
             if (Main.npcChatText != "" || Main.playerInventory || (Main.player[Main.myPlayer].chest != -1 || Main.npcShop != 0) || (Main.player[Main.myPlayer].talkNPC == -1 || Main.InGuideCraftMenu))
             {
                 CloseHairWindow();
             }
+
+            // Update animations
+            if (AnimationCounter++ % 120 < 60)
+            {
+                int speed = 60 / numAnimationFrames;
+                AnimationProgress = (AnimationCounter % 120) / speed;
+            }
+            else
+            {
+                AnimationProgress = 0;
+            }
+
+            // Calculate the buyprice
+            BuyPrice = CalculatePrice();
 
             base.Update(gameTime);
         }
@@ -372,7 +403,7 @@ namespace HairLoader.UI
             }
         }
 
-        internal void OpenHairWindow(NPC npc = null)
+        public void OpenHairWindow()
         {
             // Save the hair and color of the player
             OldHairID = Main.player[Main.myPlayer].hair;
@@ -421,7 +452,7 @@ namespace HairLoader.UI
             SoundEngine.PlaySound(SoundID.MenuOpen);
         }
 
-        internal void CloseHairWindow()
+        private void CloseHairWindow()
         {
             if (!Visible)
             {
@@ -433,7 +464,7 @@ namespace HairLoader.UI
 
             Visible = false;
 
-            if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
+            if (Main.player[Main.myPlayer].talkNPC > -1)
             {
                 Main.player[Main.myPlayer].SetTalkNPC(-1);
             }
@@ -441,14 +472,14 @@ namespace HairLoader.UI
             SoundEngine.PlaySound(SoundID.MenuClose);
         }
 
-        internal void BuyHairWindow()
+        private void BuyHairWindow()
         {
             Main.player[Main.myPlayer].hair = SelectedHairID;
             Main.player[Main.myPlayer].hairColor = Main.hslToRgb(Color_Hue, Color_Saturation, Color_Luminosity);
 
             Visible = false;
 
-            if (Main.player[Main.myPlayer].talkNPC > -1 && Main.npc[Main.player[Main.myPlayer].talkNPC].type == NPCID.Stylist)
+            if (Main.player[Main.myPlayer].talkNPC > -1)
             {
                 Main.player[Main.myPlayer].SetTalkNPC(-1);
             }
@@ -458,37 +489,55 @@ namespace HairLoader.UI
             NetMessage.SendData(MessageID.SyncPlayer, number: Main.myPlayer);
         }
 
-        internal bool CanBuyHair()
+        private bool CanBuyHair()
         {
-            if (Main.player[Main.myPlayer].hair != OldHairID || Main.player[Main.myPlayer].hairColor != OldHairColor)
+            if ((Main.player[Main.myPlayer].hair == OldHairID && Main.player[Main.myPlayer].hairColor == OldHairColor)
+                || (HairLoader.HairTable[SelectedHairID].HasCustomPrice && !CustomCurrencyManager.TryGetCurrencySystem(HairLoader.HairTable[SelectedHairID].CustomCurrencyID, out _)))
             {
-                int price = 0;
+                return false;
+            }
 
-                if (Main.player[Main.myPlayer].hair != OldHairID)
-                {
-                    price += HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].HairPrice : 100000;
-                }
-
-                if (Main.player[Main.myPlayer].hairColor != OldHairColor)
-                {
-                    price += HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].ColorPrice : 20000;
-                }
-
-                if (HairLoader.HairTable[SelectedHairID].SpecialCurrencyID == -1)
-                {
-                    price = (int)(price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
-                }
-
-                if (Main.player[Main.myPlayer].BuyItem(price, HairLoader.HairTable[SelectedHairID].OverridePrice ? HairLoader.HairTable[SelectedHairID].SpecialCurrencyID : -1))
-                {
-                    return true;
-                }
+            if (Main.player[Main.myPlayer].BuyItem(BuyPrice, HairLoader.HairTable[SelectedHairID].HasCustomPrice ? HairLoader.HairTable[SelectedHairID].CustomCurrencyID : -1))
+            {
+                return true;
             }
 
             return false;
         }
 
-        internal static void UpdateUnlocks()
+        private int CalculatePrice()
+        {
+            int price = 0;
+
+            // Check if the hairstyle has been changed
+            if (SelectedHairID != OldHairID)
+            {
+                // Increase price with hair buy price
+                price += HairLoader.HairTable[SelectedHairID].HasCustomPrice
+                    ? HairLoader.HairTable[SelectedHairID].CustomHairPrice
+                    : HairLoader.HairTable[SelectedHairID].HairPrice;
+            }
+
+            // Check if the color has been changed
+            if (Main.player[Main.myPlayer].hairColor != OldHairColor)
+            {
+                // Increase price with hair re-color price
+                price += HairLoader.HairTable[SelectedHairID].HasCustomPrice
+                    ? HairLoader.HairTable[SelectedHairID].CustomColorPrice
+                    : HairLoader.HairTable[SelectedHairID].ColorPrice;
+            }
+
+            // Vanilla price adjustment from NPC happiness
+            if ((!HairLoader.HairTable[SelectedHairID].HasCustomPrice && HairLoader.HairTable[SelectedHairID].UsePriceAdjustment)
+                || (HairLoader.HairTable[SelectedHairID].HasCustomPrice && HairLoader.HairTable[SelectedHairID].UseCustomPriceAdjustment))
+            {
+                price = (int)((float)price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
+            }
+
+            return price;
+        }
+
+        private static void UpdateUnlocks()
         {
             // Trick the vanilla UpdateUnlock code
             Main.hairWindow = true;
@@ -496,7 +545,7 @@ namespace HairLoader.UI
             Main.hairWindow = false;
         }
 
-        internal void UpdateModList()
+        private void UpdateModList()
         {
             ModList.Clear();
 
@@ -553,7 +602,7 @@ namespace HairLoader.UI
         }
 
         // This Function updates the hairgrid
-        internal void UpdateHairGrid(bool AllButton, string highlightDisplayName)
+        private void UpdateHairGrid(bool AllButton, string highlightDisplayName)
         {
             // First clear the entire grid from elements so we can rebuild it
             HairGrid.Clear();
@@ -615,13 +664,13 @@ namespace HairLoader.UI
         private static string GetHexText(Color pendingColor) => "#" + pendingColor.Hex3().ToUpper();
 
         // Function used to determine if the given string is a hexcode
-        internal static bool GetHexColor(string hexString, out Color rgb)
+        private static bool GetHexColor(string hexString, out Color rgb)
         {
             // Check if the string starts with a #
             if (hexString.StartsWith("#"))
             {
                 // Remove the first element of the string (the #)
-                hexString = hexString.Substring(1);
+                hexString = hexString[1..];
             }
 
             // Check if the given string has length 6 or lower and try to parse it as an hexnumber
@@ -642,7 +691,7 @@ namespace HairLoader.UI
             return false;
         }
 
-        internal bool ModListContainsSelected()
+        private bool ModListContainsSelected()
         {
             foreach (UIElement element in ModList._items)
             {
@@ -795,8 +844,8 @@ namespace HairLoader.UI
             Main.instance.LoadHair(_hairID);
 
             // Draw the full hairstyle
-            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false);
-            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 0, TextureAssets.PlayerHair[_hairID].Width(), 38), _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false) + new Vector2(0f, _hairWindow.AnimationProgress is 1 or 2 or 3 or 8 or 9 or 10 ? 2f : 0f);
+            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 56 * _hairWindow.AnimationProgress, TextureAssets.PlayerHair[_hairID].Width(), 38 - (int)offset.Y), _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
         }
     }
 
@@ -1013,115 +1062,146 @@ namespace HairLoader.UI
             }
 
             Vector2 windowPosition = _hairWindow.HairWindowPosition;
-            CalculatedStyle dimensions = base.GetInnerDimensions();
 
-            // Check which currency the hairstyle uses
-            if (!HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
-                || (HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice && HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID == -1))
+            // Draw the savings element
+            DrawCurrency(
+                spriteBatch,
+                new Vector2(windowPosition.X + 632f, windowPosition.Y + 160f),
+                Lang.inter[66].Value,
+                HairLoader.HairTable[_hairWindow.SelectedHairID].HasCustomPrice
+                    ? HairLoader.HairTable[_hairWindow.SelectedHairID].CustomCurrencyID
+                    : -1,
+                true);
+
+            // Draw the price element
+            DrawCurrency(
+                spriteBatch,
+                new Vector2(windowPosition.X + 632f, windowPosition.Y + 190f),
+                Language.GetTextValue("Mods.HairLoader.HairWindowUI.Cost"),
+                HairLoader.HairTable[_hairWindow.SelectedHairID].HasCustomPrice 
+                    ? HairLoader.HairTable[_hairWindow.SelectedHairID].CustomCurrencyID 
+                    : -1,
+                false);
+        }
+
+        private void DrawCurrency(SpriteBatch spriteBatch, Vector2 position, string text, int currency, bool savings = false)
+        {
+            // Buyprice is too low
+            if (_hairWindow.BuyPrice <= 0)
             {
-                // Draw the vanilla savings popup
-                ItemSlot.DrawSavings(Main.spriteBatch, windowPosition.X + 632f, windowPosition.Y + 160f, true);
+                return;
+            }
 
-                int price = 0;
+            // Get the player instance 
+            Player player = Main.player[Main.myPlayer];
 
-                // Check if the hairstyle has been changed
-                if (_hairWindow.SelectedHairID != _hairWindow.OldHairID)
+            // Check which currency we need to display
+            if (currency == -1)
+            {
+                // the amount to display
+                long count;
+
+                // Draw Savings icons
+                if (savings)
                 {
-                    // Increase price with hair buy price
-                    price += HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
-                        ? HairLoader.HairTable[_hairWindow.SelectedHairID].HairPrice 
-                        : 100000;
+                    long num1 = Utils.CoinsCount(out _, player.bank.item);
+                    long num2 = Utils.CoinsCount(out _, player.bank2.item);
+                    long num3 = Utils.CoinsCount(out _, player.bank3.item);
+                    long num4 = Utils.CoinsCount(out _, player.bank4.item);
+                    count = Utils.CoinsCombineStacks(out _, num1, num2, num3, num4);
+                    DrawSavingsIcon(spriteBatch, position, count, num1, num2, num3, num4);
+                }
+                else
+                {
+                    count = _hairWindow.BuyPrice;
                 }
 
-                // Check if the color has been changed
-                if (Main.player[Main.myPlayer].hairColor != _hairWindow.OldHairColor)
-                {
-                    // Increase price with hair re-color price
-                    price += HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice
-                        ? HairLoader.HairTable[_hairWindow.SelectedHairID].ColorPrice
-                        : 20000;
-                }
+                // Draw Text
+                DynamicSpriteFont value = FontAssets.MouseText.Value;
+                Vector2 vector = value.MeasureString(text);
+                Color baseColor = Color.Black * (Color.White.A / 255f);
+                Vector2 origin = new Vector2(0f, 0f) * vector;
+                Vector2 baseScale = new(1f);
+                TextSnippet[] snippets = ChatManager.ParseMessage(text, Color.White).ToArray();
+                ChatManager.ConvertNormalSnippets(snippets);
+                ChatManager.DrawColorCodedStringShadow(spriteBatch, value, snippets, new Vector2(position.X, position.Y + 40f), baseColor, 0f, origin, baseScale, -1f, 1.5f);
+                ChatManager.DrawColorCodedString(spriteBatch, value, snippets, new Vector2(position.X, position.Y + 40f), Color.White, 0f, origin, baseScale, out var _, -1f);
 
-                // Apply vanilla price adjustments
-                if (HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID != -1)
-                {
-                    price = (int)((float)price * (float)Main.player[Main.myPlayer].currentShoppingSettings.PriceAdjustment);
-                }
-
-                // Calculate a new start position for the prices
-                Vector2 pricePosition = new Vector2(windowPosition.X + 632f, windowPosition.Y + 190f);
-
-                // Get the text
-                string text = Language.GetTextValue("Mods.HairLoader.HairWindowUI.Cost");
-
-                // Draw Cost Text
-                Utils.DrawBorderStringFourWay(
-                    spriteBatch,
-                    FontAssets.MouseText.Value,
-                    text,
-                    pricePosition.X,
-                    pricePosition.Y + 40f,
-                    Color.White * ((float)Main.mouseTextColor / (float)byte.MaxValue),
-                    Color.Black,
-                    Vector2.Zero);
-
-                int[] coinsArray = Utils.CoinsSplit(price);
+                // Draw Coins
+                int[] coinsArray = Utils.CoinsSplit(count);
 
                 for (int index = 0; index < 4; index++)
                 {
                     Main.instance.LoadItem(74 - index);
-                    Vector2 position = new Vector2(pricePosition.X + ChatManager.GetStringSize(FontAssets.MouseText.Value, text, Vector2.One).X + 24f * index + 45f, pricePosition.Y + 50f);
-                    spriteBatch.Draw(TextureAssets.Item[74 - index].Value, position, new Rectangle?(), Color.White, 0.0f, TextureAssets.Item[74 - index].Value.Size() * 0.5f, 1f, SpriteEffects.None, 0.0f);
-                    Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.ItemStack.Value, coinsArray[3 - index].ToString(), position.X - 11f, position.Y, Color.White, Color.Black, new Vector2(0.3f), 0.75f);
+                    Vector2 currencyPosition = new(position.X + (24f * index) + 120f, position.Y + 50f);
+                    spriteBatch.Draw(TextureAssets.Item[74 - index].Value, currencyPosition, new Rectangle?(), Color.White, 0.0f, TextureAssets.Item[74 - index].Value.Size() * 0.5f, 1f, SpriteEffects.None, 0.0f);
+                    Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.ItemStack.Value, coinsArray[3 - index].ToString(), currencyPosition.X - 11f, currencyPosition.Y, Color.White, Color.Black, new Vector2(0.3f), 0.75f);
                 }
             }
-            else if (HairLoader.HairTable[_hairWindow.SelectedHairID].OverridePrice 
-                && HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID != -1 
-                && CustomCurrencyManager.TryGetCurrencySystem(HairLoader.HairTable[_hairWindow.SelectedHairID].SpecialCurrencyID, out CustomCurrencySystem system))
+            else if (CustomCurrencyManager.TryGetCurrencySystem(currency, out CustomCurrencySystem system))
             {
-                /*
+                // Reflection magic
+                Type type = system.GetType();
+                FieldInfo field = type.GetField("_valuePerUnit", BindingFlags.Instance | BindingFlags.NonPublic);
+                Dictionary<int, int> valuePerUnit = field.GetValue(system) as Dictionary<int,int>;
 
-                // Price is a custom currency
+                // the amount to display
+                long count;
 
-                // Load the texture of the currency item
-                Main.instance.LoadItem(HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency);
-
-                // Search for the chosen item's texture in the TextureAssets.Item array
-                Texture2D texture = TextureAssets.Item[HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].currency].Value;
-
-                // Get the texture's size
-                Vector2 textureSize = new Vector2(texture.Width, texture.Height);
-
-                // Get the size of the slot 
-                Vector2 slotSize = new Vector2(24, 24);
-
-                // Calculate the scale to apply to make the item's texture fit in the slot
-                float scale = slotSize.X / textureSize.X > slotSize.Y / slotSize.Y ? slotSize.X / textureSize.X : slotSize.Y / slotSize.Y;
-
-                int price = 0;
-
-                // Check if the hairstyle has been changed
-                if ((HairWindow.selectMod != HairWindow.OldModName || HairWindow.selectHair != HairWindow.OldHairName))
+                // Draw Savings
+                if (savings)
                 {
-                    // Increase price with hair buy price
-                    price += HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].hairPrice;
+                    long num1 = system.CountCurrency(out _, player.bank.item);
+                    long num2 = system.CountCurrency(out _, player.bank2.item);
+                    long num3 = system.CountCurrency(out _, player.bank3.item);
+                    long num4 = system.CountCurrency(out _, player.bank4.item);
+                    count = system.CombineStacks(out _, num1, num2, num3, num4);
+                    DrawSavingsIcon(spriteBatch, position, count, num1, num2, num3, num4);
+                }
+                else
+                {
+                    count = _hairWindow.BuyPrice;
                 }
 
-                // Check if the color has been changed
-                if (Main.player[Main.myPlayer].hairColor != HairWindow.OldHairColor)
-                {
-                    // Increase price with hair re-color price
-                    price += HairLoader.HairTable[HairWindow.selectMod][HairWindow.selectHair].colorPrice;
-                }
+                // Draw Text
+                DynamicSpriteFont value = FontAssets.MouseText.Value;
+                Vector2 vector = value.MeasureString(text);
+                Color baseColor = Color.Black * ((float)(int)Color.White.A / 255f);
+                Vector2 origin = new Vector2(0f, 0f) * vector;
+                Vector2 baseScale = new(1f);
+                TextSnippet[] snippets = ChatManager.ParseMessage(text, Color.White).ToArray();
+                ChatManager.ConvertNormalSnippets(snippets);
+                ChatManager.DrawColorCodedStringShadow(spriteBatch, value, snippets, new Vector2(position.X, position.Y + 40f), baseColor, 0f, origin, baseScale, -1f, 1.5f);
+                ChatManager.DrawColorCodedString(spriteBatch, value, snippets, new Vector2(position.X, position.Y + 40f), Color.White, 0f, origin, baseScale, out var _, -1f);
 
-                price = (int)((float)price * priceAdjustment);
+                // Draw Coins
+                int i = valuePerUnit.Keys.ElementAt<int>(0);
+                Main.instance.LoadItem(i);
+                Texture2D texture = TextureAssets.Item[i].Value;
 
-                // Draw the item's texture with the calculated scale
-                spriteBatch.Draw(texture, dimensions.Position() + new Vector2(dimensions.Width / 2 - 10, 0f), texture.Bounds, Color.White, 0f, texture.Size() * 0.5f, scale, SpriteEffects.None, 0f);
+                Vector2 currencyPosition = new(position.X + 120f, position.Y + 50f);
+                spriteBatch.Draw(texture, currencyPosition, new Rectangle?(), Color.White, 0.0f, texture.Size() * 0.5f, 0.8f, SpriteEffects.None, 0.0f);
+                Utils.DrawBorderStringFourWay(spriteBatch, FontAssets.ItemStack.Value, count.ToString(), currencyPosition.X - 11f, currencyPosition.Y, Color.White, Color.Black, new Vector2(0.3f), 0.75f);
+            }
+        }
 
-                // Draw the price text underneath the item
-                DynamicSpriteFontExtensionMethods.DrawString(Main.spriteBatch, FontAssets.MouseText.Value, price.ToString(), dimensions.Position() + new Vector2(78f, 20f), Color.White, 0f, new Vector2(4f, 0f), 1f, SpriteEffects.None, 0.0f);
-                */
+        private static void DrawSavingsIcon(SpriteBatch spriteBatch, Vector2 position, long count, long num1, long num2, long num3, long num4)
+        {
+            if (count > 0L)
+            {
+                Main.GetItemDrawFrame(4076, out Texture2D itemTexture1, out Rectangle itemFrame1);
+                Main.GetItemDrawFrame(3813, out Texture2D itemTexture2, out Rectangle itemFrame2);
+                Main.GetItemDrawFrame(346, out Texture2D itemTexture3, out Rectangle itemFrame3);
+                Main.GetItemDrawFrame(87, out Texture2D itemTexture4, out Rectangle itemFrame4);
+
+                if (num4 > 0L)
+                    spriteBatch.Draw(itemTexture1, Utils.CenteredRectangle(new Vector2(position.X + 92f, position.Y + 45f), itemFrame1.Size() * 0.65f), new Rectangle?(), Color.White);
+                if (num3 > 0L)
+                    spriteBatch.Draw(itemTexture2, Utils.CenteredRectangle(new Vector2(position.X + 92f, position.Y + 45f), itemFrame2.Size() * 0.65f), new Rectangle?(), Color.White);
+                if (num2 > 0L)
+                    spriteBatch.Draw(itemTexture3, Utils.CenteredRectangle(new Vector2(position.X + 80f, position.Y + 50f), itemFrame3.Size() * 0.65f), new Rectangle?(), Color.White);
+                if (num1 > 0L)
+                    spriteBatch.Draw(itemTexture4, Utils.CenteredRectangle(new Vector2(position.X + 70f, position.Y + 60f), itemFrame4.Size() * 0.65f), new Rectangle?(), Color.White);
             }
         }
     }

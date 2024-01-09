@@ -27,7 +27,8 @@ namespace HairLoader.UI
 		public override void LeftMouseUp(UIMouseEvent evt)
 		{
 			base.LeftMouseUp(evt);
-            if (!_hairWindow.PreventDragging()) DragEnd(evt);
+            if (!_hairWindow.PreventDragging()
+				&& _dragging) DragEnd(evt);
 		}
 
 		private void DragStart(UIMouseEvent evt)

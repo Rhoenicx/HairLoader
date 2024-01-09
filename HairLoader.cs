@@ -22,27 +22,46 @@ namespace HairLoader
 {    
     public class HairEntry
     {
+        // Basic visibility and price
         public bool Visible { get; set; }
-        public bool OverridePrice { get; set; }         // Determines if a custom price or currency is defined for this hairstyle, false means vanilla logic
-        public int SpecialCurrencyID { get; set; }      // Determines the currency that will be used to buy this HairStyle. -1 = coins, 0 = defender medals
-        public int HairPrice { get; set; }              // The price of this Hairstyle in copper coins or special currency 'value'
-        public int ColorPrice { get; set; }             // The price to change the color of this Hairstyle in copper coins or special currency 'value'
-        public bool HasUnlockHint { get; set; }         // Whether an unlock condition needs to be displayed for this hairstyle
+        public int HairPrice { get; set; }
+        public int ColorPrice { get; set; }
+        public bool UsePriceAdjustment { get; set; }
+
+        // Custom price fields for hair and color
+        public bool HasCustomPrice { get; set; }
+        public int CustomCurrencyID { get; set; }
+        public int CustomHairPrice { get; set; }
+        public int CustomColorPrice { get; set; }
+        public bool UseCustomPriceAdjustment { get; set; }
+        
+        // Unlock hint
+        public bool HasUnlockHint { get; set; }
         public bool UnlockHintIsLocalized { get; set; }
-        public string UnlockHint { get; set; }          // Hint for the player how to unlock this hairstyle
+        public string UnlockHint { get; set; }
+
+        // Custom unlock hint fields
         public bool HasCustomUnlockHint { get; set; }
         public bool CustomUnlockHintIsLocalized { get; set; }
         public string CustomUnlockHint { get; set; }
+
+        // Hair name
         public bool HairNameIsLocalized { get; set; }
-        public string HairName { get; set; }            // The name of the hairstyle in the hairWindow
+        public string HairName { get; set; }
+
+        // Custom hair name
         public bool HasCustomHairName { get; set; }
         public bool CustomHairNameIsLocalized { get; set; }
         public string CustomHairName { get; set; }
+
+        // Mod name
         public bool ModNameIsLocalized { get; set; }
-        public string ModName { get; set; }             // The internal name of the Mod that added this hairstyle
+        public string ModName { get; set; }
+
+        // Custom mod name
         public bool HasCustomModName { get; set; }
         public bool CustomModNameIsLocalized { get; set; }
-        public string CustomModName { get; set; }       // The modified mod name that added this hairstyle, this line will overwrite the Mod's name in the categories window
+        public string CustomModName { get; set; }
     }
 
     class HairLoader : Mod
@@ -109,17 +128,23 @@ namespace HairLoader
                 // Add an entry to our dictionary
                 if (!HairTable.ContainsKey(i))
                 {
-                    HairTable.Add(i, new HairEntry()
+                    HairTable.TryAdd(i, new HairEntry()
                     {
-                        OverridePrice = false,
-                        SpecialCurrencyID = -1,
-                        HairPrice = 0,
-                        ColorPrice = 0,
+                        // Price
+                        HairPrice = 100000,
+                        ColorPrice = 20000,
+                        UsePriceAdjustment = true,
+
+                        // Unlock hint
                         HasUnlockHint = i < Main.maxHairStyles,
                         UnlockHintIsLocalized = i < Main.maxHairStyles,
                         UnlockHint = GetUnlockHint(i),
+
+                        // Hair name
                         HairNameIsLocalized = i < Main.maxHairStyles,
                         HairName = GetHairName(i),
+
+                        // Mod name
                         ModNameIsLocalized = i < Main.maxHairStyles,
                         ModName = GetModName(i)
                     });
@@ -129,15 +154,21 @@ namespace HairLoader
                 {
                     HairTable[i] = new HairEntry()
                     {
-                        OverridePrice = false,
-                        SpecialCurrencyID = -1,
-                        HairPrice = 0,
-                        ColorPrice = 0,
+                        // Price
+                        HairPrice = 100000,
+                        ColorPrice = 20000,
+                        UsePriceAdjustment = true,
+
+                        // Unlock hint
                         HasUnlockHint = i < Main.maxHairStyles,
                         UnlockHintIsLocalized = i < Main.maxHairStyles,
                         UnlockHint = GetUnlockHint(i),
+
+                        // Hair name
                         HairNameIsLocalized = i < Main.maxHairStyles,
                         HairName = GetHairName(i),
+
+                        // Mod name
                         ModNameIsLocalized = i < Main.maxHairStyles,
                         ModName = GetModName(i)
                     };
@@ -145,11 +176,21 @@ namespace HairLoader
                 // Entry exists, set default not-mod-callable fields.
                 else if (HairTable.ContainsKey(i) && HairTable[i] != null)
                 {
+                    // Price
+                    HairTable[i].HairPrice = 100000;
+                    HairTable[i].ColorPrice = 20000;
+                    HairTable[i].UsePriceAdjustment = true;
+
+                    // Unlock hint
                     HairTable[i].HasUnlockHint = i < Main.maxHairStyles;
                     HairTable[i].UnlockHintIsLocalized = i < Main.maxHairStyles;
                     HairTable[i].UnlockHint = GetUnlockHint(i);
+
+                    // Hair name
                     HairTable[i].HairNameIsLocalized = i < Main.maxHairStyles;
                     HairTable[i].HairName = GetHairName(i);
+
+                    // Mod name
                     HairTable[i].ModNameIsLocalized = i < Main.maxHairStyles;
                     HairTable[i].ModName = GetModName(i);
                 }
