@@ -17,6 +17,7 @@ using HairLoader.UI;
 using Terraria.Localization;
 using System.Text;
 using System.Text.RegularExpressions;
+using Terraria.GameContent.UI;
 
 namespace HairLoader
 {    
@@ -112,88 +113,335 @@ namespace HairLoader
 
         public override object Call(params object[] args)
         {
+            try
+            {
+                if (args.Length <= 0
+                    || args[0] == null
+                    || args[0] is not string)
+                {
+                    return "HairLoader Call Error: First argument is null or not a string";
+                }
+
+                string message = args[0] as string;
+
+                if (args.Length <= 1
+                    || args[1] == null 
+                    || args[1] is not int)
+                { 
+                    return "HairLoader Call Error: Second argument is null or not a int";
+                }
+
+                int id = (int)args[1];
+
+                switch (message)
+                {
+                    case "AddEverything":
+                        {
+                            if (args.Length <= 11)
+                            {
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 11";
+                            }
+
+                            return "Success";
+                        }
+
+                    case "AddCustomHairName":
+                        {
+                            if (args.Length <= 3)
+                            {
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 4";
+                            }
+
+                            if (args[2] == null
+                                || args[2] is not string)
+                            {
+                                return "HairLoader Call Error: Third argument is null or not a string";
+                            }
+
+                            if (args[3] == null
+                                || args[3] is not bool)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a bool";
+                            }
+
+                            AddCustomHair(id, args[2] as string, (bool)args[3]);
+
+                            return "Success";
+                        }
+
+                    case "AddCustomModName":
+                        {
+                            if (args.Length <= 3)
+                            {
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 4";
+                            }
+
+                            if (args[2] == null
+                                || args[2] is not string)
+                            {
+                                return "HairLoader Call Error: Third argument is null or not a string";
+                            }
+
+                            if (args[3] == null
+                                || args[3] is not bool)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a bool";
+                            }
+
+                            AddCustomMod(id, args[2] as string, (bool)args[3]);
+
+                            return "Success";
+                        }
+
+                    case "AddCustomPrice":
+                        {
+                            if (args.Length <= 5)
+                            {
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 6";
+                            }
+
+                            if (args[2] == null
+                                || args[2] is not int)
+                            {
+                                return "HairLoader Call Error: Third argument is null or not a int";
+                            }
+
+                            if (args[3] == null
+                                || args[3] is not int)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a int";
+                            }
+
+                            if (args[4] == null
+                                || args[4] is not int)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a int";
+                            }
+
+                            if (args[5] == null
+                                || args[5] is not bool)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a bool";
+                            }
+
+                            if ((int)args[2] != -1 && !CustomCurrencyManager.TryGetCurrencySystem((int)args[2], out _))
+                            {
+                                return "HairLoader Call Error: Given currency ID does not exist in CustomCurrencyManager";
+                            }
+
+                            if ((int)args[3] < 0)
+                            {
+                                return "HairLoader Call Error: Hair price cannot be negative";
+                            }
+
+                            if ((int)args[4] < 0)
+                            {
+                                return "HairLoader Call Error: Color price cannot be negative";
+                            }
+
+                            AddCustomPrice(id, (int)args[2], (int)args[3], (int)args[4], (bool)args[5]);
+
+                            return "Success";
+                        }
+
+                    case "AddCustomUnlockHint":
+                        {
+                            if (args.Length <= 3)
+                            {
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 4";
+                            }
+
+                            if (args[2] == null
+                                || args[2] is not string)
+                            {
+                                return "HairLoader Call Error: Third argument is null or not a string";
+                            }
+
+                            if (args[3] == null
+                                || args[3] is not bool)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a bool";
+                            }
+
+                            AddCustomHint(id, args[2] as string, (bool)args[3]);
+
+                            return "Success";
+                        }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Warn("HairLoader Call Error: " + e.StackTrace + e.Message);
+            }
             return "Failure";
         }
 
-        public static void LoadHairEntries()
+        private static void AddCustomPrice(int id, int currency = -1, int hairPrice = 100000, int colorPrice = 20000, bool priceAdjustment = false)
+        {
+            // Check the bounds of the given id
+            if (id > Terraria.ModLoader.HairLoader.Count || id < 0)
+            {
+                return;
+            }
+
+            // Check HairTable
+            HairTable ??= new();
+
+            // Load the default hair entry
+            LoadHair(id);
+
+            // Assign the price
+            HairTable[id].HasCustomPrice = true;
+            HairTable[id].CustomCurrencyID = currency;
+            HairTable[id].CustomHairPrice = hairPrice;
+            HairTable[id].CustomColorPrice = colorPrice;
+            HairTable[id].UseCustomPriceAdjustment = priceAdjustment;
+        }
+
+        private static void AddCustomHair(int id, string name = "", bool localized = false)
+        {
+            // Check the bounds of the given id
+            if (id > Terraria.ModLoader.HairLoader.Count || id < 0)
+            {
+                return;
+            }
+
+            // Check HairTable
+            HairTable ??= new();
+
+            // Load the default hair entry
+            LoadHair(id);
+
+            // Assign the name
+            HairTable[id].HasCustomHairName = true;
+            HairTable[id].CustomHairName = name;
+            HairTable[id].CustomHairNameIsLocalized = localized;
+        }
+
+        private static void AddCustomMod(int id, string name = "", bool localized = false)
+        { 
+            // Check the bounds of the given id
+            if (id > Terraria.ModLoader.HairLoader.Count || id < 0)
+            {
+                return;
+            }
+
+            // Check HairTable
+            HairTable ??= new();
+
+            // Load the default hair entry
+            LoadHair(id);
+
+            // Assign the name
+            HairTable[id].HasCustomModName = true;
+            HairTable[id].CustomModName = name;
+            HairTable[id].CustomModNameIsLocalized = localized;
+        }
+
+        private static void AddCustomHint(int id, string hint = "", bool localized = false)
+        {
+            // Check the bounds of the given id
+            if (id > Terraria.ModLoader.HairLoader.Count || id < 0)
+            {
+                return;
+            }
+
+            // Check HairTable
+            HairTable ??= new();
+
+            // Load the default hair entry
+            LoadHair(id);
+
+            // Assign the hint
+            HairTable[id].HasCustomUnlockHint = true;
+            HairTable[id].CustomUnlockHint = hint;
+            HairTable[id].UnlockHintIsLocalized = localized;
+        }
+
+        private static void LoadHairEntries()
         {
             HairTable ??= new();
 
             // Loop through all the loaded hairstyles
             for (int i = 0; i < Terraria.ModLoader.HairLoader.Count; i++)
             {
-                // Load the Hair textures
-                Main.instance.LoadHair(i);
+                LoadHair(i);
+            }
+        }
 
-                // Add an entry to our dictionary
-                if (!HairTable.ContainsKey(i))
-                {
-                    HairTable.TryAdd(i, new HairEntry()
-                    {
-                        // Price
-                        HairPrice = 100000,
-                        ColorPrice = 20000,
-                        UsePriceAdjustment = true,
+        private static void LoadHair(int index)
+        {
+            // Load the Hair textures
+            Main.instance.LoadHair(index);
 
-                        // Unlock hint
-                        HasUnlockHint = i < Main.maxHairStyles,
-                        UnlockHintIsLocalized = i < Main.maxHairStyles,
-                        UnlockHint = GetUnlockHint(i),
-
-                        // Hair name
-                        HairNameIsLocalized = i < Main.maxHairStyles,
-                        HairName = GetHairName(i),
-
-                        // Mod name
-                        ModNameIsLocalized = i < Main.maxHairStyles,
-                        ModName = GetModName(i)
-                    });
-                }
-                // Entry exists but is null
-                else if (HairTable.ContainsKey(i) && HairTable[i] == null)
-                {
-                    HairTable[i] = new HairEntry()
-                    {
-                        // Price
-                        HairPrice = 100000,
-                        ColorPrice = 20000,
-                        UsePriceAdjustment = true,
-
-                        // Unlock hint
-                        HasUnlockHint = i < Main.maxHairStyles,
-                        UnlockHintIsLocalized = i < Main.maxHairStyles,
-                        UnlockHint = GetUnlockHint(i),
-
-                        // Hair name
-                        HairNameIsLocalized = i < Main.maxHairStyles,
-                        HairName = GetHairName(i),
-
-                        // Mod name
-                        ModNameIsLocalized = i < Main.maxHairStyles,
-                        ModName = GetModName(i)
-                    };
-                }
-                // Entry exists, set default not-mod-callable fields.
-                else if (HairTable.ContainsKey(i) && HairTable[i] != null)
+            // Add an entry to our dictionary
+            if (!HairTable.ContainsKey(index))
+            {
+                HairTable.TryAdd(index, new HairEntry()
                 {
                     // Price
-                    HairTable[i].HairPrice = 100000;
-                    HairTable[i].ColorPrice = 20000;
-                    HairTable[i].UsePriceAdjustment = true;
+                    HairPrice = 100000,
+                    ColorPrice = 20000,
+                    UsePriceAdjustment = true,
 
                     // Unlock hint
-                    HairTable[i].HasUnlockHint = i < Main.maxHairStyles;
-                    HairTable[i].UnlockHintIsLocalized = i < Main.maxHairStyles;
-                    HairTable[i].UnlockHint = GetUnlockHint(i);
+                    HasUnlockHint = index < Main.maxHairStyles,
+                    UnlockHintIsLocalized = index < Main.maxHairStyles,
+                    UnlockHint = GetUnlockHint(index),
 
                     // Hair name
-                    HairTable[i].HairNameIsLocalized = i < Main.maxHairStyles;
-                    HairTable[i].HairName = GetHairName(i);
+                    HairNameIsLocalized = index < Main.maxHairStyles,
+                    HairName = GetHairName(index),
 
                     // Mod name
-                    HairTable[i].ModNameIsLocalized = i < Main.maxHairStyles;
-                    HairTable[i].ModName = GetModName(i);
-                }
+                    ModNameIsLocalized = index < Main.maxHairStyles,
+                    ModName = GetModName(index)
+                });
+            }
+            // Entry exists but is null
+            else if (HairTable.ContainsKey(index) && HairTable[index] == null)
+            {
+                HairTable[index] = new HairEntry()
+                {
+                    // Price
+                    HairPrice = 100000,
+                    ColorPrice = 20000,
+                    UsePriceAdjustment = true,
+
+                    // Unlock hint
+                    HasUnlockHint = index < Main.maxHairStyles,
+                    UnlockHintIsLocalized = index < Main.maxHairStyles,
+                    UnlockHint = GetUnlockHint(index),
+
+                    // Hair name
+                    HairNameIsLocalized = index < Main.maxHairStyles,
+                    HairName = GetHairName(index),
+
+                    // Mod name
+                    ModNameIsLocalized = index < Main.maxHairStyles,
+                    ModName = GetModName(index)
+                };
+            }
+            // Entry exists, set default not-mod-callable fields.
+            else if (HairTable.ContainsKey(index) && HairTable[index] != null)
+            {
+                // Price
+                HairTable[index].HairPrice = 100000;
+                HairTable[index].ColorPrice = 20000;
+                HairTable[index].UsePriceAdjustment = true;
+
+                // Unlock hint
+                HairTable[index].HasUnlockHint = index < Main.maxHairStyles;
+                HairTable[index].UnlockHintIsLocalized = index < Main.maxHairStyles;
+                HairTable[index].UnlockHint = GetUnlockHint(index);
+
+                // Hair name
+                HairTable[index].HairNameIsLocalized = index < Main.maxHairStyles;
+                HairTable[index].HairName = GetHairName(index);
+
+                // Mod name
+                HairTable[index].ModNameIsLocalized = index < Main.maxHairStyles;
+                HairTable[index].ModName = GetModName(index);
             }
         }
 

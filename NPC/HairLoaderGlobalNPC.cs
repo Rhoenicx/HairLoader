@@ -7,7 +7,7 @@ namespace HairLoader.NPC
 {
     public class HairLoaderGlobalNPC : GlobalNPC
     {
-        public override bool PreChatButtonClicked(NPC npc, bool firstButton)
+        public override bool PreChatButtonClicked(Terraria.NPC npc, bool firstButton)
         {
             // When the NPC is the stylist
             if (npc.type == NPCID.Stylist)

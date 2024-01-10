@@ -1,6 +1,6 @@
 author = Rhoenicx
 version = 0.3.0.0
-displayName = HairWindow
+displayName = Hair Window Reworked
 hideCode = false
 hideResources = false
 side = Client
