@@ -1,8 +1,9 @@
-﻿using Terraria;
+﻿using HairLoader.System;
+using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace HairLoader
+namespace HairLoader.NPC
 {
     public class HairLoaderGlobalNPC : GlobalNPC
     {
