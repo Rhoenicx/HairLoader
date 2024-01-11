@@ -6,6 +6,8 @@ using Terraria.UI;
 using Terraria;
 using static Terraria.ModLoader.ModContent;
 using Microsoft.Xna.Framework;
+using Terraria.Audio;
+using Terraria.ID;
 
 namespace HairLoader.UI.Components
 {
@@ -86,9 +88,18 @@ namespace HairLoader.UI.Components
 
                     if (HairLoader.HairTable[_hairID].HasUnlockHint)
                     {
-                        _hairWindow.HighlightText += "\r\n" + (HairLoader.HairTable[_hairID].UnlockHintIsLocalized
-                            ? Language.GetTextValue(HairLoader.HairTable[_hairID].UnlockHint)
-                            : HairLoader.HairTable[_hairID].UnlockHint);
+                        if (HairLoader.HairTable[_hairID].HasCustomUnlockHint)
+                        {
+                            _hairWindow.HighlightText += "\r\n" + (HairLoader.HairTable[_hairID].CustomUnlockHintIsLocalized
+                                    ? Language.GetTextValue(HairLoader.HairTable[_hairID].CustomUnlockHint)
+                                    : HairLoader.HairTable[_hairID].CustomUnlockHint);
+                        }
+                        else
+                        {
+                            _hairWindow.HighlightText += "\r\n" + (HairLoader.HairTable[_hairID].UnlockHintIsLocalized
+                                ? Language.GetTextValue(HairLoader.HairTable[_hairID].UnlockHint)
+                                : HairLoader.HairTable[_hairID].UnlockHint);
+                        }
                     }
                 }
                 else
@@ -106,7 +117,7 @@ namespace HairLoader.UI.Components
             Main.instance.LoadHair(_hairID);
 
             // Draw the full hairstyle
-            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false) + new Vector2(0f, _hairWindow.AnimationProgress is 1 or 2 or 3 or 8 or 9 or 10 ? 2f : 0f);
+            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false) + new Vector2(2f, _hairWindow.AnimationProgress is 1 or 2 or 3 or 8 or 9 or 10 ? 2f : 0f);
             spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 56 * _hairWindow.AnimationProgress, TextureAssets.PlayerHair[_hairID].Width(), 38 - (int)offset.Y), _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
         }
     }

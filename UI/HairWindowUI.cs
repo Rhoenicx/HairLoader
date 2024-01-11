@@ -24,7 +24,8 @@ namespace HairLoader.UI
         public bool Visible;
 
         // Highlights
-        public string HighlightDisplayName = "All";
+        public string HighlightDisplayName
+            = Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry");
         public string HighlightText = null;
 
         // New Selected Entry
@@ -546,16 +547,16 @@ namespace HairLoader.UI
         {
             ModList.Clear();
 
-            ModSlot modListEntryAll = new("All", Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry"));
+            ModSlot modListEntryAll = new(Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry"));
             modListEntryAll.OnLeftClick += (a, b) =>
             {
-                HighlightDisplayName = "All";
+                HighlightDisplayName = Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry");
                 UpdateHairGrid(true, HighlightDisplayName);
                 SoundEngine.PlaySound(SoundID.MenuTick);
             };
             ModList.Add(modListEntryAll);
 
-            Dictionary<string, string> ModNames = new();
+            HashSet<string> ModNames = new();
 
             foreach (HairEntry entry in HairLoader.HairTable.Values)
             {
@@ -570,25 +571,27 @@ namespace HairLoader.UI
                     modName = entry.ModNameIsLocalized ? Language.GetTextValue(entry.ModName) : entry.ModName;
                 }
 
-                if (!ModNames.ContainsKey(modName) && modName != "All" && modName != "")
+                if (!ModNames.Contains(modName) 
+                    && modName != Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry") 
+                    && modName != "")
                 {
-                    ModNames.TryAdd(entry.ModName, modName);
+                    ModNames.Add(modName);
                 }
             }
 
-            foreach (KeyValuePair<string, string> entry in ModNames)
+            foreach (string modName in ModNames)
             {
                 // Create a new mod slot with the displayname of this modclass
-                ModSlot modListEntry = new(entry.Key, entry.Value);
+                ModSlot modListEntry = new(modName);
                 
                 // When the slot is clicked
                 modListEntry.OnLeftClick += (a, b) =>
                 {
                     // Write the displayname to the highlightDisplayName
-                    HighlightDisplayName = entry.Key;
+                    HighlightDisplayName = modName;
                 
                     // Update the Hairgrid with hairs from this mod
-                    UpdateHairGrid(false, entry.Key); // No 'all' button 
+                    UpdateHairGrid(false, modName); // No 'all' button 
                 
                     // Play tick sound
                     SoundEngine.PlaySound(SoundID.MenuTick);
@@ -607,8 +610,19 @@ namespace HairLoader.UI
             // Scan all the mods and hairstyles
             foreach (KeyValuePair<int, HairEntry> entry in HairLoader.HairTable)
             {
+                string modName = "";
+
+                if (entry.Value.HasCustomModName)
+                {
+                    modName = entry.Value.CustomModNameIsLocalized ? Language.GetTextValue(entry.Value.CustomModName) : entry.Value.CustomModName;
+                }
+                else
+                {
+                    modName = entry.Value.ModNameIsLocalized ? Language.GetTextValue(entry.Value.ModName) : entry.Value.ModName;
+                }
+
                 // Allbutton has been pressed or mod is the highlighted/selected mod
-                if (AllButton || entry.Value.ModName == highlightDisplayName)
+                if (AllButton || modName == highlightDisplayName)
                 {
                     bool available = Main.Hairstyles.AvailableHairstyles.Contains(entry.Key);
 
@@ -694,14 +708,14 @@ namespace HairLoader.UI
             {
                 if (element is ModSlot slot)
                 {
-                    if (slot.InternalName == HighlightDisplayName)
+                    if (slot.Text == HighlightDisplayName)
                     {
                         return true;
                     }
                 }
             }
 
-            HighlightDisplayName = "All";
+            HighlightDisplayName = Language.GetTextValue("Mods.HairLoader.HairWindowUI.Categories.AllEntry");
             return false;
         }
 

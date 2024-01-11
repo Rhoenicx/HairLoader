@@ -18,6 +18,7 @@ using Terraria.Localization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Terraria.GameContent.UI;
+using Terraria.Audio;
 
 namespace HairLoader
 {    
@@ -69,8 +70,12 @@ namespace HairLoader
     {
         internal static HairLoader Instance;
 
+        // Setup finished
+        private static bool _setupFinished = false;
+
         // Dictionary that stores all the PlayerHairEntries
         public static Dictionary<int, HairEntry> HairTable = new Dictionary<int, HairEntry>();
+
 
         // Point to this Mod object Instance.
         public HairLoader()
@@ -80,6 +85,8 @@ namespace HairLoader
 
         public override void Load()
         {
+            _setupFinished = false;
+
             // Code not ran on server
             if (!Main.dedServ)
             {
@@ -90,12 +97,8 @@ namespace HairLoader
 
         public override void Unload()
         {
-            // Code not ran on server
-            if (!Main.dedServ)
-            {
-                // Clear the HairTable
-                HairTable = null;
-            }
+            // Clear the HairTable
+            HairTable = null;
 
             // Clear the mod instance
             Instance = null;
@@ -105,7 +108,7 @@ namespace HairLoader
 
         public override void PostSetupContent()
         {
-            if (!Main.dedServ)
+            if (!_setupFinished)
             {
                 LoadHairEntries();
             }
@@ -113,6 +116,13 @@ namespace HairLoader
 
         public override object Call(params object[] args)
         {
+            // When a mod call comes in, check if our mod has 
+            // already finished setup
+            if (!_setupFinished)
+            {
+                LoadHairEntries();
+            }
+
             try
             {
                 if (args.Length <= 0
@@ -133,14 +143,109 @@ namespace HairLoader
 
                 int id = (int)args[1];
 
+                // Check the bounds of the given id
+                if (id > Terraria.ModLoader.HairLoader.Count || id < 0)
+                {
+                    return "HairLoader Call Error: Given Hair ID is not valid";
+                }
+
+                // Switch of call messages
                 switch (message)
                 {
-                    case "AddEverything":
+                    case "AddFullHairEntry":
                         {
                             if (args.Length <= 11)
                             {
-                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 11";
+                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 12";
                             }
+
+                            // Price
+                            if (args[2] == null
+                                || args[2] is not int)
+                            {
+                                return "HairLoader Call Error: Third argument is null or not a int";
+                            }
+
+                            if (args[3] == null
+                                || args[3] is not int)
+                            {
+                                return "HairLoader Call Error: Fourth argument is null or not a int";
+                            }
+
+                            if (args[4] == null
+                                || args[4] is not int)
+                            {
+                                return "HairLoader Call Error: Fifth argument is null or not a int";
+                            }
+
+                            if (args[5] == null
+                                || args[5] is not bool)
+                            {
+                                return "HairLoader Call Error: Sixth argument is null or not a bool";
+                            }
+
+                            if ((int)args[2] != -1 && !CustomCurrencyManager.TryGetCurrencySystem((int)args[2], out _))
+                            {
+                                return "HairLoader Call Error: Given currency ID does not exist in CustomCurrencyManager";
+                            }
+
+                            if ((int)args[3] < 0)
+                            {
+                                return "HairLoader Call Error: Hair price cannot be negative";
+                            }
+
+                            if ((int)args[4] < 0)
+                            {
+                                return "HairLoader Call Error: Color price cannot be negative";
+                            }
+
+                            AddCustomPrice(id, (int)args[2], (int)args[3], (int)args[4], (bool)args[5]);
+
+                            // Mod name
+                            if (args[6] == null
+                                || args[6] is not string)
+                            {
+                                return "HairLoader Call Error: Seventh argument is null or not a string";
+                            }
+
+                            if (args[7] == null
+                                || args[7] is not bool)
+                            {
+                                return "HairLoader Call Error: Eigth argument is null or not a bool";
+                            }
+
+                            AddCustomMod(id, args[6] as string, (bool)args[7]);
+
+
+                            // Hair name
+                            if (args[8] == null
+                                || args[8] is not string)
+                            {
+                                return "HairLoader Call Error: Ninth argument is null or not a string";
+                            }
+
+                            if (args[9] == null
+                                || args[9] is not bool)
+                            {
+                                return "HairLoader Call Error: Tenth argument is null or not a bool";
+                            }
+
+                            AddCustomHair(id, args[8] as string, (bool)args[9]);
+
+                            // Unlock hint
+                            if (args[10] == null
+                                || args[10] is not string)
+                            {
+                                return "HairLoader Call Error: Eleventh argument is null or not a string";
+                            }
+
+                            if (args[11] == null
+                                || args[11] is not bool)
+                            {
+                                return "HairLoader Call Error: Twelveth argument is null or not a bool";
+                            }
+
+                            AddCustomHint(id, args[10] as string, (bool)args[11]);
 
                             return "Success";
                         }
@@ -173,7 +278,7 @@ namespace HairLoader
                         {
                             if (args.Length <= 3)
                             {
-                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 4";
+                                return "HairLoader Call Error: too few argument given for AddCustomModName. Given: " + args.Length + " Need: 4";
                             }
 
                             if (args[2] == null
@@ -197,7 +302,7 @@ namespace HairLoader
                         {
                             if (args.Length <= 5)
                             {
-                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 6";
+                                return "HairLoader Call Error: too few argument given for AddCustomPrice. Given: " + args.Length + " Need: 6";
                             }
 
                             if (args[2] == null
@@ -215,13 +320,13 @@ namespace HairLoader
                             if (args[4] == null
                                 || args[4] is not int)
                             {
-                                return "HairLoader Call Error: Fourth argument is null or not a int";
+                                return "HairLoader Call Error: Fifth argument is null or not a int";
                             }
 
                             if (args[5] == null
                                 || args[5] is not bool)
                             {
-                                return "HairLoader Call Error: Fourth argument is null or not a bool";
+                                return "HairLoader Call Error: Sixth argument is null or not a bool";
                             }
 
                             if ((int)args[2] != -1 && !CustomCurrencyManager.TryGetCurrencySystem((int)args[2], out _))
@@ -248,7 +353,7 @@ namespace HairLoader
                         {
                             if (args.Length <= 3)
                             {
-                                return "HairLoader Call Error: too few argument given for AddCustomHairName. Given: " + args.Length + " Need: 4";
+                                return "HairLoader Call Error: too few argument given for AddCustomUnlockHint. Given: " + args.Length + " Need: 4";
                             }
 
                             if (args[2] == null
@@ -353,9 +458,10 @@ namespace HairLoader
             LoadHair(id);
 
             // Assign the hint
+            HairTable[id].HasUnlockHint = true;
             HairTable[id].HasCustomUnlockHint = true;
             HairTable[id].CustomUnlockHint = hint;
-            HairTable[id].UnlockHintIsLocalized = localized;
+            HairTable[id].CustomUnlockHintIsLocalized = localized;
         }
 
         private static void LoadHairEntries()
@@ -367,6 +473,9 @@ namespace HairLoader
             {
                 LoadHair(i);
             }
+
+            // Setup has been finished
+            _setupFinished = true;
         }
 
         private static void LoadHair(int index)

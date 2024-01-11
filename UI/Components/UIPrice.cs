@@ -80,7 +80,8 @@ namespace HairLoader.UI.Components
                     long num2 = Utils.CoinsCount(out _, player.bank2.item);
                     long num3 = Utils.CoinsCount(out _, player.bank3.item);
                     long num4 = Utils.CoinsCount(out _, player.bank4.item);
-                    count = Utils.CoinsCombineStacks(out _, num1, num2, num3, num4);
+                    long num5 = Utils.CoinsCount(out _, player.inventory);
+                    count = Utils.CoinsCombineStacks(out _, num1, num2, num3, num4, num5);
                     DrawSavingsIcon(spriteBatch, position, count, num1, num2, num3, num4);
                 }
                 else
@@ -127,7 +128,8 @@ namespace HairLoader.UI.Components
                     long num2 = system.CountCurrency(out _, player.bank2.item);
                     long num3 = system.CountCurrency(out _, player.bank3.item);
                     long num4 = system.CountCurrency(out _, player.bank4.item);
-                    count = system.CombineStacks(out _, num1, num2, num3, num4);
+                    long num5 = system.CountCurrency(out _, player.inventory);
+                    count = system.CombineStacks(out _, num1, num2, num3, num4, num5);
                     DrawSavingsIcon(spriteBatch, position, count, num1, num2, num3, num4);
                 }
                 else
