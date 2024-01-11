@@ -1,16 +1,15 @@
-This mod acts as a framework for other mods to add their custom hairstyles to the game using simple Mod Calls.
+BetterHairWindow/HairLoader replaces the vanilla hairwindow with an all new window with more features.
 
-Current features:
+Features:
 - Replaces the Stylist's NPC hairwindow with a custom hairwindow UI.
-- Hairwindow is sorted based on mod name(s).
-- Custom currency support by specifying the item's ID.
-- Option to specify the price of the hairstyle and re-color.
-- Option to add the Hairstyle to the character creation window.
-- Option to add custom unlock conditions for each hairstyle (requires additional Mod Calls)
-- Utilizes a custom way to save the selected hair, based on mod (class) name and hair name.
-- Reverts the players last selected vanilla hair if the custom hairstyle is no longer available (e.g. disabled mod).
-- Hair offset X to move the hair along the X-axis, useful for hairstyles that exceed the vanilla hair texture width.
-- Currently requires spritesheets to be same height as vanilla's.
+- The hairstyles can be filtered based on mod name.
+- The hairstyles are displayed in a scrollable grid.
+- Locked hairstyles can be displayed using a button.
+- Unlock hints are displayed alongside hair name.
+- Colors can be pasted/copied/randomized.
+- The total players savings and hair price is displayed.
+- Hairstyles are animated.
+- For modders: Mod calls to change mod name, hair name, price and unlock hint.
 
 Github: https://github.com/Rhoenicx/HairLoader
 
@@ -21,6 +20,7 @@ Please leave your suggestions, bugs and other notices in the Steam Workshop comm
 
 
 Changelog:
+- 0.3.0.0 : Reworked mod for tML 1.4.4
 - 0.2.0.1 : Updated description file
 - 0.2.0.0 : Now using IL patches instead of detours.
 - 0.1.0.5 : Added extra button to show locked hairstyles.
