@@ -1,24 +1,10 @@
 using System;
 using System.Reflection;
 using System.Collections.Generic;
-using System.IO;
-using MonoMod.Cil;
-using Mono.Cecil.Cil;
-using Microsoft.Xna.Framework.Graphics;
 using Terraria;
-using Terraria.UI;
-using Terraria.GameContent;
-using Terraria.GameContent.UI.Elements;
-using Terraria.ID;
 using Terraria.ModLoader;
-using Terraria.DataStructures;
-using ReLogic.Content;
-using HairLoader.UI;
-using Terraria.Localization;
-using System.Text;
 using System.Text.RegularExpressions;
 using Terraria.GameContent.UI;
-using Terraria.Audio;
 
 namespace HairLoader
 {    
