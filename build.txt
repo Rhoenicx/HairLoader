@@ -1,5 +1,5 @@
 author = Rhoenicx
-version = 0.3.0.0
+version = 0.3.0.1
 displayName = Better Hair Window
 hideCode = false
 hideResources = false

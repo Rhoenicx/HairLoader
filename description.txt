@@ -20,6 +20,7 @@ Please leave your suggestions, bugs and other notices in the Steam Workshop comm
 
 
 Changelog:
+- 0.3.0.1 : Fixed a visual bug with hair offsets and player direction.
 - 0.3.0.0 : Reworked mod for tML 1.4.4
 - 0.2.0.1 : Updated description file
 - 0.2.0.0 : Now using IL patches instead of detours.

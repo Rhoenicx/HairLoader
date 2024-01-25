@@ -108,17 +108,53 @@ namespace HairLoader.UI.Components
                 }
             }
 
+            Vector2 drawPosition = dimensions.Center().Floor();
+            drawPosition.X -= 20f;
+            drawPosition.Y -= 20f;
+
             // Draw the vanilla player textures in the slot => Head, eyeWhite and eye
-            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].skinColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 1].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
-            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, dimensions.Center(), new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].eyeColor, 0.0f, new Vector2(offsetX, dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 0].Value, drawPosition, new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].skinColor, 0.0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 1].Value, drawPosition, new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), new Color(255, 255, 255, 255), 0.0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.Players[0, 2].Value, drawPosition, new Rectangle?(new Rectangle(0, 0, TextureAssets.PlayerHair[Main.player[Main.myPlayer].hair].Width(), 56)), _locked ? Color.Gray : Main.player[Main.myPlayer].eyeColor, 0.0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
 
             // Load the Hair textures
             Main.instance.LoadHair(_hairID);
 
+            // Trickery to get the player looking to the right
+            int direction = Main.player[Main.myPlayer].direction;
+            Main.player[Main.myPlayer].direction = 1;
+
+            // Calculate the offset with the player looking right.
+            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false);
+
+            // Revert back the saved player direction
+            Main.player[Main.myPlayer].direction = direction;
+
+            // Add offset for the animation frames
+            int walkOffset = _hairWindow.AnimationProgress is 1 or 2 or 3 or 8 or 9 or 10 ? 2 : 0;
+            offset.Y += walkOffset;
+
+            // Prepare the hair rectangle
+            Rectangle hairFrame = new(
+                -(int)offset.X,
+                TextureAssets.PlayerHair[_hairID].Height() / 14 * _hairWindow.AnimationProgress - (int)offset.Y,
+                TextureAssets.PlayerHair[_hairID].Width() + (int)offset.X,                         
+                TextureAssets.PlayerHair[_hairID].Height() / 14 + (int)offset.Y);                                
+
+            // Limit the width of the sheet to 40, so it fits in the slot
+            if (hairFrame.Width > 40)
+            {
+                hairFrame.Width -= hairFrame.Width - 40;
+            }
+
+            // Limit the lower part of the sheet to 40
+            if (hairFrame.Height > 40)
+            {
+                hairFrame.Height -= hairFrame.Height - 40;
+            }
+
             // Draw the full hairstyle
-            Vector2 offset = Main.player[Main.myPlayer].GetHairDrawOffset(_hairID, false) + new Vector2(2f, _hairWindow.AnimationProgress is 1 or 2 or 3 or 8 or 9 or 10 ? 2f : 0f);
-            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, dimensions.Center() + offset, new Rectangle(0, 56 * _hairWindow.AnimationProgress, TextureAssets.PlayerHair[_hairID].Width(), 38 - (int)offset.Y), _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, new Vector2(TextureAssets.PlayerHair[_hairID].Width(), dimensions.Height + offsetY) * 0.5f, 1f, SpriteEffects.None, 0f);
+            spriteBatch.Draw(TextureAssets.PlayerHair[_hairID].Value, drawPosition, hairFrame, _locked ? Color.Gray : Main.player[Main.myPlayer].hairColor, 0.0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
         }
     }
 
